@@ -1,6 +1,6 @@
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,10 +13,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+/** Fallback when middleware is bypassed; real titles come from `[locale]/layout` metadata. */
 export const metadata: Metadata = {
-  title: "Oson Menu - Digital Menu for Restaurants",
-  description:
-    "Oson Menu helps restaurants launch QR menus, manage dishes in real time, and serve customers in Uzbek, English, and Russian.",
+  title: "OsonMenu",
+  description: "Smart digital menus for restaurants.",
 };
 
 export default function RootLayout({
@@ -30,7 +30,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">
+      <body className="flex min-h-full flex-col">
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

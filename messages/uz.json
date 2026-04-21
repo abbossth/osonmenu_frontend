@@ -1,0 +1,353 @@
+{
+  "Metadata": {
+    "title": "OsonMenu — restoranlar uchun aqlli raqamli menyu",
+    "description": "Bir necha daqiqada premium QR menyu ishga tushiring. Real vaqtda tahrir, ko'p tilli mehmonlar, tahlil — ilovasiz va qayta chop etishsiz."
+  },
+  "Nav": {
+    "brand": "OsonMenu",
+    "features": "Imkoniyatlar",
+    "how": "Qanday ishlaydi",
+    "demo": "Demo menyu",
+    "pricing": "Tariflar",
+    "cta": "Boshlash",
+    "language": "Til",
+    "theme": "Mavzu",
+    "light": "Yorqin",
+    "dark": "Qora"
+  },
+  "Hero": {
+    "eyebrow": "Zamonaviy restoranlar uchun raqamli menyu",
+    "title": "Bir necha daqiqada aqlli raqamli menyu yarating",
+    "subtitle": "Mehmonlar menyuni QR orqali bir zumda ochadi — ilova shart emas. Jamoa taomlar, narxlar va aksiyalarni bir paneldan real vaqtda yangilaydi.",
+    "primaryCta": "Boshlash",
+    "secondaryCta": "Demo menyuni ko'rish",
+    "trust1": "30 kun bepul sinov",
+    "trust2": "Sinash uchun karta kerak emas",
+    "previewLabel": "Bugungi tanlov",
+    "previewItems": [
+      { "title": "Truffle burger", "price": "85 000" },
+      { "title": "Sitrus salat", "price": "65 000" },
+      { "title": "Smoked Old Fashioned", "price": "55 000" }
+    ]
+  },
+  "Features": {
+    "title": "Aqlliroq menyu uchun barcha vositalar",
+    "subtitle": "Mehmon tajribasi va tezlikni bir xil darajada oladigan restoranlar uchun yaratilgan.",
+    "items": [
+      {
+        "title": "QR menyu",
+        "body": "Bir skanerlash — brauzerda tez, mobil-first menyu. Yuklab olish shart emas."
+      },
+      {
+        "title": "Oson tahrirlash",
+        "body": "Telefon yoki kompyuterdan taom, surat va narxlarni yangilang. O'zgarishlar darhol chiqadi."
+      },
+      {
+        "title": "Analitika",
+        "body": "Skanlar, yuqori yuklama vaqtlari va buyurtma oldidan nimalarni ko'rishini tushunib oling."
+      },
+      {
+        "title": "Ko'p tillilik",
+        "body": "Mahalliy va sayyohlar uchun bir tugma bilan til almashtirish — alohida PDF kerak emas."
+      },
+      {
+        "title": "Yuqori tezlik",
+        "body": "Edge-keshlangan menyu millisekundlarda ochiladi — hatto mehmon Wi‑Fi da ham."
+      },
+      {
+        "title": "Xodim rollari",
+        "body": "Menejer tasdiqlaydi, xodim yangilaydi — egasi akkauntini ulashmasdan."
+      }
+    ]
+  },
+  "How": {
+    "title": "Qanday ishlaydi",
+    "subtitle": "Bo'sh varaqdan bugungi tunda ishga tushadigan menyuga uch qadam.",
+    "steps": [
+      {
+        "n": "01",
+        "title": "Menyuni yarating",
+        "body": "Import qiling yoki noldan boshlang. Suratlar, allergenlar, modifikatorlar va tillar."
+      },
+      {
+        "n": "02",
+        "title": "QR ulashing",
+        "body": "Stol kodlari yoki havola — brendingiz, qoidalaringiz."
+      },
+      {
+        "n": "03",
+        "title": "Ko'rish va buyurtmani kuzating",
+        "body": "Real vaqtda ishtirok. Nima sotilishini bilib, qayta chop etmasdan takomillashtiring."
+      }
+    ]
+  },
+  "DemoPreview": {
+    "title": "Mahsulot ko'rinishi",
+    "subtitle": "Stollaringizga mos mehmon tajribasi — tez, vizual, doim dolzarb.",
+    "browserUrl": "menu.osonmenu.app / demo",
+    "categoriesLabel": "Bo'limlar",
+    "tip": "Maslahat: mavsumiy taomlarni har qanday bo'lim boshiga pin qiling.",
+    "tonight": "Bugun",
+    "chefPicks": "Shef tanlovi",
+    "add": "Qo'shish",
+    "samples": [
+      { "title": "Wagyu smash", "price": "95 000" },
+      { "title": "Burrata va anjir", "price": "72 000" },
+      { "title": "O'choqda pitsa", "price": "88 000" },
+      { "title": "Sitrus brule", "price": "48 000" },
+      { "title": "Qovurilgan losos", "price": "112 000" },
+      { "title": "Espresso tonik", "price": "32 000" }
+    ]
+  },
+  "DemoMenu": {
+    "brand": "Qala",
+    "venue": "Qala Restaurant",
+    "location": "Xiva shahri, O'zbekiston",
+    "title": "Yuqori sifatli QR menyu demo",
+    "subtitle": "OddMenu uslubidagi home/detail flow va premium mobil UI.",
+    "menuPill": "Taomlar",
+    "searchPlaceholder": "Qidirish",
+    "noResults": "Mos taom topilmadi.",
+    "language": "Til",
+    "back": "Orqaga",
+    "coverImage": "https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=1200&q=80",
+    "categoryImages": {
+      "salads": "https://images.unsplash.com/photo-1546793665-c74683f339c1?auto=format&fit=crop&w=1200&q=80",
+      "coldStarters": "https://images.unsplash.com/photo-1598511757337-fe2cafc31a71?auto=format&fit=crop&w=1200&q=80",
+      "mainDishes": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=1200&q=80",
+      "soups": "https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=1200&q=80",
+      "drinks": "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=1200&q=80"
+    },
+    "badges": {
+      "popular": "Mashhur",
+      "new": "Yangi",
+      "sale": "Aksiya"
+    },
+    "categories": {
+      "salads": "SALATLAR",
+      "coldStarters": "SOVUQ GAZAKLAR",
+      "mainDishes": "ASOSIY TAOMLAR",
+      "soups": "SHO'RVALAR",
+      "drinks": "ICHIMLIKLAR"
+    },
+    "items": [
+      {
+        "id": "salad-1",
+        "category": "salads",
+        "image": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=1200&q=80",
+        "title": "Qarsildoq baqlajon salati",
+        "description": "Cherry pomidor, mikroyashil, anor, sarimsoqli dressing.",
+        "price": "50 000 so'm",
+        "badge": "popular"
+      },
+      {
+        "id": "salad-2",
+        "category": "salads",
+        "image": "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80",
+        "title": "Grek salati",
+        "description": "Feta, zaytun, bodring, qizil piyoz, oregano sous.",
+        "price": "45 000 so'm",
+        "badge": null
+      },
+      {
+        "id": "cold-1",
+        "category": "coldStarters",
+        "image": "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=1200&q=80",
+        "title": "Shef sovuq assorti",
+        "description": "Til, tovuq ruleti, marinad piyoz, sitrus.",
+        "price": "62 000 so'm",
+        "badge": "new"
+      },
+      {
+        "id": "cold-2",
+        "category": "coldStarters",
+        "image": "https://images.unsplash.com/photo-1526318472351-c75fcf070305?auto=format&fit=crop&w=1200&q=80",
+        "title": "Atlantika seld bo'laklari",
+        "description": "Marinadlangan file, kartoshka mousse, javdar chips.",
+        "price": "58 000 so'm",
+        "badge": null
+      },
+      {
+        "id": "main-1",
+        "category": "mainDishes",
+        "image": "https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=1200&q=80",
+        "title": "Uy osh",
+        "description": "Sekin pishgan guruch, qo'zi go'shti, sabzi, no'xat, mayiz.",
+        "price": "78 000 so'm",
+        "badge": "popular"
+      },
+      {
+        "id": "main-2",
+        "category": "mainDishes",
+        "image": "https://images.unsplash.com/photo-1529563021893-cc83c992d75d?auto=format&fit=crop&w=1200&q=80",
+        "title": "Ko'mirda mol kabob",
+        "description": "Shirali kabob, sumakli piyoz, lavash, achchiq sous.",
+        "price": "84 000 so'm",
+        "badge": "sale"
+      },
+      {
+        "id": "soup-1",
+        "category": "soups",
+        "image": "https://images.unsplash.com/photo-1476718406336-bb5a9690ee2a?auto=format&fit=crop&w=1200&q=80",
+        "title": "Mastava",
+        "description": "Pomidorli guruch sho'rva, mayin mol go'shti va ko'katlar.",
+        "price": "35 000 so'm",
+        "badge": null
+      },
+      {
+        "id": "soup-2",
+        "category": "soups",
+        "image": "https://images.unsplash.com/photo-1547928576-a4a33237cbc3?auto=format&fit=crop&w=1200&q=80",
+        "title": "Qo'ziqorin krem-sho'rva",
+        "description": "Shampinion krem, suxari, truffle moy tomchilari.",
+        "price": "39 000 so'm",
+        "badge": "new"
+      },
+      {
+        "id": "drink-1",
+        "category": "drinks",
+        "image": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
+        "title": "Mevali limonad",
+        "description": "Malina, yalpiz, limon po'sti, gazlangan suv.",
+        "price": "22 000 so'm",
+        "badge": "popular"
+      },
+      {
+        "id": "drink-2",
+        "category": "drinks",
+        "image": "https://images.unsplash.com/photo-1497534446932-c925b458314e?auto=format&fit=crop&w=1200&q=80",
+        "title": "Anorli muzli choy",
+        "description": "Uyda damlangan qora choy, anor siropi, sitrus.",
+        "price": "20 000 so'm",
+        "badge": null
+      }
+    ]
+  },
+  "Testimonials": {
+    "title": "Har kechasi ishlaydigan jamoalar tanlaydi",
+    "subtitle": "Band zaldan haqiqiy fikrlar.",
+    "items": [
+      {
+        "quote": "Qayta chop etish xarajatini mutlaqo yo'qotdik. Mehmonlar uzoqroq ko'radi — desert biriktirish foizi ikki baravar oshdi.",
+        "name": "Maya Chen",
+        "role": "Egasi, North & Pine Bistro"
+      },
+      {
+        "quote": "Admin panel juda tez. GM iPad orqali servislar orasida maxsus takliflarni yangilaydi.",
+        "name": "Jordan Blake",
+        "role": "Operatsiya direktori, Ember Steakhouse"
+      },
+      {
+        "quote": "QR g'alati tuyulardi, OsonMenu dan keyin emas. Haqiqiy mahsuldek — PDF emas.",
+        "name": "Sofia Alvarez",
+        "role": "Bosh menejer, Luna Tapas Bar"
+      }
+    ]
+  },
+  "Pricing": {
+    "title": "Sodda va foydali tariflar",
+    "subtitle": "Bosqichingizga mos rejani tanlang. Yillik reja eng kuchli qiymatni beradi.",
+    "saveUpTo": "25% gacha tejang",
+    "mostPopular": "Eng ommabop",
+    "billing": {
+      "monthly": "Oylik to'lov",
+      "yearly": "Yillik to'lov",
+      "yearlyHint": "Yillikga o'tib, eng past oylik narxni bloklang."
+    },
+    "currency": {
+      "uzs": "So'm",
+      "usd": "Dollar",
+      "uzsSuffix": "so'm"
+    },
+    "perMonth": "oy",
+    "plans": {
+      "monthly": {
+        "name": "Oylik",
+        "label": "Start",
+        "months": 1,
+        "prices": { "monthly": 99000, "yearly": 99000 },
+        "oldPrices": { "monthly": 120000 },
+        "microcopy": {
+          "monthly": "OsonMenu'ni tez sinab ko'rish uchun qulay.",
+          "yearly": "Moslashuvchan start uchun qulay tarif."
+        },
+        "features": [
+          "QR menyuni darhol ishga tushirish",
+          "Cheksiz menyu yangilanishi",
+          "Asosiy analitika paneli",
+          "1 ta restoran filiali"
+        ],
+        "cta": "Hozir boshlash",
+        "highlighted": false
+      },
+      "threeMonths": {
+        "name": "3 oylik",
+        "label": "Ko'proq tejang",
+        "months": 3,
+        "prices": { "monthly": 279000, "yearly": 279000 },
+        "microcopy": {
+          "monthly": "Qisqa muddatda ham yaxshi oylik narx.",
+          "yearly": "Barqaror o'sayotgan jamoalar uchun muvozanatli tanlov."
+        },
+        "features": [
+          "Oylikdagi barcha imkoniyatlar",
+          "Ko'p tilli menyu",
+          "Tezkor yordam",
+          "Mavsumiy aksiyalar vositalari"
+        ],
+        "cta": "3 oylik tanlash",
+        "highlighted": false
+      },
+      "sixMonths": {
+        "name": "6 oylik",
+        "label": "Eng maqbul",
+        "months": 6,
+        "prices": { "monthly": 519000, "yearly": 519000 },
+        "microcopy": {
+          "monthly": "Masshtabga chiqayotgan restoranlar uchun ommabop.",
+          "yearly": "Xarajatni oldindan rejalash uchun qulay."
+        },
+        "features": [
+          "3 oylikdagi barcha imkoniyatlar",
+          "Kengaytirilgan tahlil",
+          "Xodim rollari bo'yicha kirish",
+          "Promo bloklarini ajratib ko'rsatish"
+        ],
+        "cta": "6 oylik tanlash",
+        "highlighted": false
+      },
+      "yearly": {
+        "name": "1 yillik",
+        "label": "Eng yaxshi qiymat",
+        "months": 12,
+        "prices": { "monthly": 899000, "yearly": 899000 },
+        "microcopy": {
+          "monthly": "Eng katta tejamkorlik va yuqori ROI.",
+          "yearly": "Eng aqlli tanlov: 12 oyga maksimal chegirma."
+        },
+        "features": [
+          "6 oylikdagi barcha imkoniyatlar",
+          "Maksimal yillik chegirma",
+          "Premium yordam navbati",
+          "Konversiya optimizatsiyasi"
+        ],
+        "cta": "Yillik tarifni olish",
+        "highlighted": true
+      }
+    }
+  },
+  "FinalCta": {
+    "title": "O'zi sotadigan menyuga tayyormisiz?",
+    "subtitle": "Yuzlab joylar bu hafta tezroq menyu chiqaryapti. Taomlaringizni ko'chiramiz — yoki bir soat ichida noldan boshlaysiz.",
+    "primary": "Sinovni boshlash",
+    "secondary": "Walkthrough bron qilish"
+  },
+  "Footer": {
+    "tagline": "Hunar va konversiyani birga ko'taradigan restoranlar uchun raqamli menyu platformasi.",
+    "explore": "Bo'limlar",
+    "legal": "Huquqiy",
+    "privacy": "Maxfiylik",
+    "terms": "Shartlar",
+    "rights": "© 2026 OsonMenu. Mehmondo'stlik uchun yaratilgan."
+  }
+}

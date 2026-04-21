@@ -1,0 +1,353 @@
+{
+  "Metadata": {
+    "title": "OsonMenu — Smart digital menus for restaurants",
+    "description": "Launch a premium QR menu in minutes. Real-time edits, multilingual guests, analytics—without apps or reprints."
+  },
+  "Nav": {
+    "brand": "OsonMenu",
+    "features": "Features",
+    "how": "How it works",
+    "demo": "Demo menu",
+    "pricing": "Pricing",
+    "cta": "Get started",
+    "language": "Language",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "Hero": {
+    "eyebrow": "Digital menus for modern restaurants",
+    "title": "Create Smart Digital Menus in Minutes",
+    "subtitle": "Guests open your menu instantly via QR—no apps. Your team updates dishes, prices, and promos in real time from one clean dashboard.",
+    "primaryCta": "Get started",
+    "secondaryCta": "View demo menu",
+    "trust1": "30-day free trial",
+    "trust2": "No credit card to explore",
+    "previewLabel": "Tonight's picks",
+    "previewItems": [
+      { "title": "Truffle Burger", "price": "$18" },
+      { "title": "Citrus Salad", "price": "$14" },
+      { "title": "Smoked Old Fashioned", "price": "$12" }
+    ]
+  },
+  "Features": {
+    "title": "Everything you need to run a smarter menu",
+    "subtitle": "Purpose-built for restaurants that care about guest experience and operational speed.",
+    "items": [
+      {
+        "title": "QR menu",
+        "body": "One scan opens a fast, mobile-first menu in the browser—no downloads."
+      },
+      {
+        "title": "Easy editing",
+        "body": "Update items, photos, and prices from phone or desktop. Changes go live instantly."
+      },
+      {
+        "title": "Analytics",
+        "body": "Understand scans, peak hours, and what guests browse before they order."
+      },
+      {
+        "title": "Multi-language",
+        "body": "Serve locals and tourists with one-tap switching—no duplicate PDFs."
+      },
+      {
+        "title": "Fast performance",
+        "body": "Edge-cached menus load in milliseconds—even on busy guest Wi‑Fi."
+      },
+      {
+        "title": "Staff roles",
+        "body": "Managers approve, staff updates items—without sharing the owner account."
+      }
+    ]
+  },
+  "How": {
+    "title": "How it works",
+    "subtitle": "Three steps from blank slate to a menu you can ship tonight.",
+    "steps": [
+      {
+        "n": "01",
+        "title": "Create your menu",
+        "body": "Import items or start fresh. Add photos, allergens, modifiers, and languages."
+      },
+      {
+        "n": "02",
+        "title": "Share your QR",
+        "body": "Print table codes or share a link—your branding, your rules."
+      },
+      {
+        "n": "03",
+        "title": "Track views & orders",
+        "body": "See engagement in real time. Iterate on what sells—without reprinting."
+      }
+    ]
+  },
+  "DemoPreview": {
+    "title": "Product preview",
+    "subtitle": "The guest experience your tables deserve—fast, visual, always up to date.",
+    "browserUrl": "menu.osonmenu.app / demo",
+    "categoriesLabel": "Categories",
+    "tip": "Tip: Pin seasonal items to the top of any category.",
+    "tonight": "Tonight",
+    "chefPicks": "Chef picks",
+    "add": "Add",
+    "samples": [
+      { "title": "Wagyu smash", "price": "$22" },
+      { "title": "Burrata & fig", "price": "$16" },
+      { "title": "Wood-fired pizza", "price": "$19" },
+      { "title": "Citrus brûlée", "price": "$11" },
+      { "title": "Seared salmon", "price": "$26" },
+      { "title": "Espresso tonic", "price": "$7" }
+    ]
+  },
+  "DemoMenu": {
+    "brand": "Qala",
+    "venue": "Qala Restaurant",
+    "location": "Khiva City, Uzbekistan",
+    "title": "High-fidelity QR menu demo",
+    "subtitle": "OddMenu-inspired flow with category home and category detail screens.",
+    "menuPill": "Dishes",
+    "searchPlaceholder": "Search",
+    "noResults": "No matching dishes found.",
+    "language": "Language",
+    "back": "Back",
+    "coverImage": "https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=1200&q=80",
+    "categoryImages": {
+      "salads": "https://images.unsplash.com/photo-1546793665-c74683f339c1?auto=format&fit=crop&w=1200&q=80",
+      "coldStarters": "https://images.unsplash.com/photo-1598511757337-fe2cafc31a71?auto=format&fit=crop&w=1200&q=80",
+      "mainDishes": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=1200&q=80",
+      "soups": "https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=1200&q=80",
+      "drinks": "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=1200&q=80"
+    },
+    "badges": {
+      "popular": "Popular",
+      "new": "New",
+      "sale": "Promo"
+    },
+    "categories": {
+      "salads": "SALADS",
+      "coldStarters": "COLD STARTERS",
+      "mainDishes": "MAIN DISHES",
+      "soups": "SOUPS",
+      "drinks": "DRINKS"
+    },
+    "items": [
+      {
+        "id": "salad-1",
+        "category": "salads",
+        "image": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=1200&q=80",
+        "title": "Crispy eggplant salad",
+        "description": "Cherry tomato, microgreens, pomegranate, creamy garlic dressing.",
+        "price": "$9",
+        "badge": "popular"
+      },
+      {
+        "id": "salad-2",
+        "category": "salads",
+        "image": "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80",
+        "title": "Greek market salad",
+        "description": "Feta, olives, cucumber, red onion, oregano vinaigrette.",
+        "price": "$8",
+        "badge": null
+      },
+      {
+        "id": "cold-1",
+        "category": "coldStarters",
+        "image": "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=1200&q=80",
+        "title": "Chef cold platter",
+        "description": "Beef tongue, turkey roll, pickled onions, citrus.",
+        "price": "$11",
+        "badge": "new"
+      },
+      {
+        "id": "cold-2",
+        "category": "coldStarters",
+        "image": "https://images.unsplash.com/photo-1526318472351-c75fcf070305?auto=format&fit=crop&w=1200&q=80",
+        "title": "Atlantic herring bites",
+        "description": "Marinated fillet, dill potato mousse, rye chips.",
+        "price": "$10",
+        "badge": null
+      },
+      {
+        "id": "main-1",
+        "category": "mainDishes",
+        "image": "https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=1200&q=80",
+        "title": "House plov",
+        "description": "Slow-cooked rice, lamb, yellow carrot, chickpea, raisin.",
+        "price": "$14",
+        "badge": "popular"
+      },
+      {
+        "id": "main-2",
+        "category": "mainDishes",
+        "image": "https://images.unsplash.com/photo-1529563021893-cc83c992d75d?auto=format&fit=crop&w=1200&q=80",
+        "title": "Charcoal beef kebab",
+        "description": "Juicy skewers, red sumac onion, lavash, chili sauce.",
+        "price": "$15",
+        "badge": "sale"
+      },
+      {
+        "id": "soup-1",
+        "category": "soups",
+        "image": "https://images.unsplash.com/photo-1476718406336-bb5a9690ee2a?auto=format&fit=crop&w=1200&q=80",
+        "title": "Mastava",
+        "description": "Tomato-based rice soup with tender beef and fresh herbs.",
+        "price": "$7",
+        "badge": null
+      },
+      {
+        "id": "soup-2",
+        "category": "soups",
+        "image": "https://images.unsplash.com/photo-1547928576-a4a33237cbc3?auto=format&fit=crop&w=1200&q=80",
+        "title": "Cream mushroom soup",
+        "description": "Champignon cream, croutons, truffle oil drops.",
+        "price": "$8",
+        "badge": "new"
+      },
+      {
+        "id": "drink-1",
+        "category": "drinks",
+        "image": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
+        "title": "Berry lemonade",
+        "description": "Raspberry, mint, lemon zest, sparkling water.",
+        "price": "$4",
+        "badge": "popular"
+      },
+      {
+        "id": "drink-2",
+        "category": "drinks",
+        "image": "https://images.unsplash.com/photo-1497534446932-c925b458314e?auto=format&fit=crop&w=1200&q=80",
+        "title": "Pomegranate iced tea",
+        "description": "House-brewed black tea, pomegranate syrup, citrus.",
+        "price": "$3",
+        "badge": null
+      }
+    ]
+  },
+  "Testimonials": {
+    "title": "Loved by teams who ship nightly",
+    "subtitle": "Real feedback from operators running busy floors.",
+    "items": [
+      {
+        "quote": "We cut reprint costs entirely. Guests browse longer—dessert attach is up double digits.",
+        "name": "Maya Chen",
+        "role": "Owner, North & Pine Bistro"
+      },
+      {
+        "quote": "The admin panel is stupidly fast. My GM updates specials from an iPad between services.",
+        "name": "Jordan Blake",
+        "role": "Operations Director, Ember Steakhouse"
+      },
+      {
+        "quote": "QR felt gimmicky until we tried OsonMenu. It looks like a real product—not a dressed-up PDF.",
+        "name": "Sofia Alvarez",
+        "role": "GM, Luna Tapas Bar"
+      }
+    ]
+  },
+  "Pricing": {
+    "title": "Simple, high-value pricing",
+    "subtitle": "Pick the plan that fits your stage. Yearly gives the strongest value for serious operators.",
+    "saveUpTo": "Save up to 25%",
+    "mostPopular": "Most Popular",
+    "billing": {
+      "monthly": "Monthly billing",
+      "yearly": "Yearly billing",
+      "yearlyHint": "Switch to yearly to lock in the lowest monthly cost."
+    },
+    "currency": {
+      "uzs": "So'm",
+      "usd": "Dollar",
+      "uzsSuffix": "so'm"
+    },
+    "perMonth": "month",
+    "plans": {
+      "monthly": {
+        "name": "Monthly",
+        "label": "Start",
+        "months": 1,
+        "prices": { "monthly": 99000, "yearly": 99000 },
+        "oldPrices": { "monthly": 120000 },
+        "microcopy": {
+          "monthly": "Good for testing OsonMenu quickly.",
+          "yearly": "Flexible starter plan for new venues."
+        },
+        "features": [
+          "Instant QR menu launch",
+          "Unlimited menu updates",
+          "Basic analytics dashboard",
+          "1 restaurant location"
+        ],
+        "cta": "Start now",
+        "highlighted": false
+      },
+      "threeMonths": {
+        "name": "3 Months",
+        "label": "Save more",
+        "months": 3,
+        "prices": { "monthly": 279000, "yearly": 279000 },
+        "microcopy": {
+          "monthly": "Lower monthly rate with a short commitment.",
+          "yearly": "Balanced option for steady growth teams."
+        },
+        "features": [
+          "Everything in Monthly",
+          "Multilingual menu",
+          "Priority edits & support",
+          "Seasonal campaign tools"
+        ],
+        "cta": "Choose 3 months",
+        "highlighted": false
+      },
+      "sixMonths": {
+        "name": "6 Months",
+        "label": "Best choice",
+        "months": 6,
+        "prices": { "monthly": 519000, "yearly": 519000 },
+        "microcopy": {
+          "monthly": "Popular with restaurants scaling operations.",
+          "yearly": "Predictable spend with better efficiency."
+        },
+        "features": [
+          "Everything in 3 Months",
+          "Advanced insights",
+          "Role-based staff access",
+          "Promo highlight widgets"
+        ],
+        "cta": "Choose 6 months",
+        "highlighted": false
+      },
+      "yearly": {
+        "name": "1 Year",
+        "label": "Best value",
+        "months": 12,
+        "prices": { "monthly": 899000, "yearly": 899000 },
+        "microcopy": {
+          "monthly": "Highest savings and strongest long-term ROI.",
+          "yearly": "Smartest deal: lock in top savings for 12 months."
+        },
+        "features": [
+          "Everything in 6 Months",
+          "Maximum annual savings",
+          "Premium support queue",
+          "Growth-focused optimization"
+        ],
+        "cta": "Get yearly deal",
+        "highlighted": true
+      }
+    }
+  },
+  "FinalCta": {
+    "title": "Ready to serve a menu that sells itself?",
+    "subtitle": "Join hundreds of venues shipping faster menus this week. We'll migrate your items—or you can start from scratch in under an hour.",
+    "primary": "Start your trial",
+    "secondary": "Book a walkthrough"
+  },
+  "Footer": {
+    "tagline": "The digital menu platform built for restaurants that care about craft—and conversion.",
+    "explore": "Explore",
+    "legal": "Legal",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "rights": "© {year} OsonMenu. Crafted for hospitality."
+  }
+}
