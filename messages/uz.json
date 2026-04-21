@@ -10,6 +10,8 @@
     "demo": "Demo menyu",
     "pricing": "Tariflar",
     "cta": "Boshlash",
+    "login": "Kirish",
+    "logout": "Chiqish",
     "language": "Til",
     "theme": "Mavzu",
     "light": "Yorqin",
@@ -334,6 +336,42 @@
         "cta": "Yillik tarifni olish",
         "highlighted": true
       }
+    }
+  },
+  "Auth": {
+    "subtitle": "OsonMenu ishchi paneliga xavfsiz kiring.",
+    "loginTitle": "Kirish",
+    "registerTitle": "Hisob yaratish",
+    "firstName": "Ism",
+    "lastName": "Familiya",
+    "email": "Email",
+    "password": "Parol",
+    "confirmPassword": "Parolni tasdiqlash",
+    "showPassword": "Ko'rsatish",
+    "hidePassword": "Yashirish",
+    "passwordHint": "Kamida 6 ta belgi ishlating.",
+    "passwordStrengthWeak": "Parol kuchi: past",
+    "passwordStrengthMedium": "Parol kuchi: o'rtacha",
+    "passwordStrengthStrong": "Parol kuchi: yuqori",
+    "loginCta": "Kirish",
+    "registerCta": "Ro'yxatdan o'tish",
+    "loading": "Yuklanmoqda...",
+    "registerSuccess": "Hisob muvaffaqiyatli yaratildi. Yo'naltirilmoqda...",
+    "haveAccount": "Allaqachon hisobingiz bormi?",
+    "noAccount": "Hisobingiz yo'qmi?",
+    "goToLogin": "Kirish",
+    "goToRegister": "Ro'yxatdan o'tish",
+    "errors": {
+      "invalidEmail": "To'g'ri email manzil kiriting.",
+      "requiredEmail": "Email kiritilishi shart.",
+      "requiredField": "Bu maydon to'ldirilishi shart.",
+      "requiredPassword": "Parol kiritilishi shart.",
+      "minName": "Kamida 2 ta belgi kiriting.",
+      "passwordMismatch": "Parollar mos emas.",
+      "weakPassword": "Parol kamida 6 ta belgidan iborat bo'lishi kerak.",
+      "invalidCredentials": "Noto'g'ri login yoki parol.",
+      "emailInUse": "Bu email allaqachon ishlatilgan.",
+      "generic": "Xatolik yuz berdi. Qayta urinib ko'ring."
     }
   },
   "FinalCta": {

@@ -10,6 +10,8 @@
     "demo": "Демо-меню",
     "pricing": "Тарифы",
     "cta": "Начать",
+    "login": "Войти",
+    "logout": "Выйти",
     "language": "Язык",
     "theme": "Тема",
     "light": "Светлая",
@@ -334,6 +336,42 @@
         "cta": "Взять годовой план",
         "highlighted": true
       }
+    }
+  },
+  "Auth": {
+    "subtitle": "Безопасный вход в рабочее пространство OsonMenu.",
+    "loginTitle": "Вход",
+    "registerTitle": "Регистрация",
+    "firstName": "Имя",
+    "lastName": "Фамилия",
+    "email": "Email",
+    "password": "Пароль",
+    "confirmPassword": "Подтвердите пароль",
+    "showPassword": "Показать",
+    "hidePassword": "Скрыть",
+    "passwordHint": "Используйте минимум 6 символов.",
+    "passwordStrengthWeak": "Надёжность пароля: слабая",
+    "passwordStrengthMedium": "Надёжность пароля: средняя",
+    "passwordStrengthStrong": "Надёжность пароля: высокая",
+    "loginCta": "Войти",
+    "registerCta": "Зарегистрироваться",
+    "loading": "Подождите...",
+    "registerSuccess": "Аккаунт создан. Выполняется переход...",
+    "haveAccount": "Уже есть аккаунт?",
+    "noAccount": "Нет аккаунта?",
+    "goToLogin": "Войти",
+    "goToRegister": "Регистрация",
+    "errors": {
+      "invalidEmail": "Введите корректный email.",
+      "requiredEmail": "Email обязателен.",
+      "requiredField": "Это поле обязательно.",
+      "requiredPassword": "Пароль обязателен.",
+      "minName": "Минимум 2 символа.",
+      "passwordMismatch": "Пароли не совпадают.",
+      "weakPassword": "Пароль должен быть не короче 6 символов.",
+      "invalidCredentials": "Неверные учетные данные.",
+      "emailInUse": "Этот email уже используется.",
+      "generic": "Что-то пошло не так. Попробуйте снова."
     }
   },
   "FinalCta": {

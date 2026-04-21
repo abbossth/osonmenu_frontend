@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Link } from "@/i18n/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useAuth } from "@/components/providers/auth-provider";
 
 const anchors = [
   { key: "features", hash: "#features" },
@@ -16,6 +17,14 @@ const anchors = [
 
 export function Navbar() {
   const t = useTranslations("Nav");
+  const { firebaseUser, appUser, loading } = useAuth();
+  const fullName =
+    appUser?.fullName?.trim() || firebaseUser?.displayName?.trim() || firebaseUser?.email?.split("@")[0] || "User";
+  const initials = fullName
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
 
   return (
     <motion.header
@@ -47,12 +56,24 @@ export function Navbar() {
         <div className="flex items-center gap-2 sm:gap-3">
           <LanguageSwitcher />
           <ThemeToggle />
-          <a
-            href="#pricing"
-            className="hidden rounded-full bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-400 sm:inline-flex dark:bg-orange-500 dark:text-white dark:hover:bg-orange-400"
-          >
-            {t("cta")}
-          </a>
+          {!loading && firebaseUser ? (
+            <Link
+              href="/profile"
+              className="hidden items-center gap-2 rounded-full border border-neutral-300 bg-white px-3 py-1.5 text-sm font-semibold text-neutral-900 transition hover:border-neutral-400 hover:bg-neutral-50 sm:inline-flex dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:hover:border-neutral-500 dark:hover:bg-neutral-800"
+            >
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-orange-500 text-[11px] font-bold text-white">
+                {initials || "U"}
+              </span>
+              <span className="max-w-[9rem] truncate">{fullName}</span>
+            </Link>
+          ) : (
+            <Link
+              href="/auth/login"
+              className="hidden rounded-full bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-400 sm:inline-flex dark:bg-orange-500 dark:text-white dark:hover:bg-orange-400"
+            >
+              {t("login")}
+            </Link>
+          )}
         </div>
       </div>
     </motion.header>

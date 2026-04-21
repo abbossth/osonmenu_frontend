@@ -1,0 +1,26 @@
+import { Schema, model, models } from "mongoose";
+
+export type UserDocument = {
+  firebaseUid: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  createdAt: Date;
+};
+
+const userSchema = new Schema<UserDocument>(
+  {
+    firebaseUid: { type: String, required: true, unique: true, index: true },
+    email: { type: String, required: true, unique: true, index: true },
+    firstName: { type: String, required: true, trim: true },
+    lastName: { type: String, required: true, trim: true },
+    fullName: { type: String, required: true, trim: true },
+    createdAt: { type: Date, default: Date.now },
+  },
+  {
+    versionKey: false,
+  },
+);
+
+export const UserModel = models.User || model<UserDocument>("User", userSchema);

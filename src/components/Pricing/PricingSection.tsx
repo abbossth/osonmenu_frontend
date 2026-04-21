@@ -47,20 +47,27 @@ export function PricingSection() {
     plans: t.raw("plans") as PricingMessages["plans"],
   } satisfies PricingMessages;
   const billingCycle = "yearly";
-  const [currency, setCurrency] = useState<CurrencyCode>(() => {
-    if (typeof window === "undefined") {
-      return "UZS";
-    }
-
-    const saved = window.localStorage.getItem("pricing-currency");
-    return saved === "USD" ? "USD" : "UZS";
-  });
+  const [currency, setCurrency] = useState<CurrencyCode>("UZS");
+  const [mounted, setMounted] = useState(false);
 
   const plans = useMemo(() => ORDER.map((key) => data.plans[key]), [data]);
 
   useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      const saved = window.localStorage.getItem("pricing-currency");
+      if (saved === "USD" || saved === "UZS") {
+        setCurrency(saved);
+      }
+      setMounted(true);
+    });
+
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     window.localStorage.setItem("pricing-currency", currency);
-  }, [currency]);
+  }, [currency, mounted]);
 
   return (
     <section id="pricing" className="border-b border-neutral-200 py-20 dark:border-neutral-800 sm:py-28">

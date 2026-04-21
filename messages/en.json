@@ -10,6 +10,8 @@
     "demo": "Demo menu",
     "pricing": "Pricing",
     "cta": "Get started",
+    "login": "Login",
+    "logout": "Logout",
     "language": "Language",
     "theme": "Theme",
     "light": "Light",
@@ -334,6 +336,42 @@
         "cta": "Get yearly deal",
         "highlighted": true
       }
+    }
+  },
+  "Auth": {
+    "subtitle": "Securely access your OsonMenu workspace.",
+    "loginTitle": "Login",
+    "registerTitle": "Create account",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "showPassword": "Show",
+    "hidePassword": "Hide",
+    "passwordHint": "Use at least 6 characters.",
+    "passwordStrengthWeak": "Password strength: weak",
+    "passwordStrengthMedium": "Password strength: medium",
+    "passwordStrengthStrong": "Password strength: strong",
+    "loginCta": "Login",
+    "registerCta": "Register",
+    "loading": "Please wait...",
+    "registerSuccess": "Account created successfully. Redirecting...",
+    "haveAccount": "Already have an account?",
+    "noAccount": "Don't have an account?",
+    "goToLogin": "Login",
+    "goToRegister": "Register",
+    "errors": {
+      "invalidEmail": "Please enter a valid email address.",
+      "requiredEmail": "Email is required.",
+      "requiredField": "This field is required.",
+      "requiredPassword": "Password is required.",
+      "minName": "Must be at least 2 characters.",
+      "passwordMismatch": "Passwords do not match.",
+      "weakPassword": "Password must be at least 6 characters.",
+      "invalidCredentials": "Invalid credentials.",
+      "emailInUse": "Email is already in use.",
+      "generic": "Something went wrong. Please try again."
     }
   },
   "FinalCta": {

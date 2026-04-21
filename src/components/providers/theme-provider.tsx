@@ -22,11 +22,11 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemeMode>(() => {
     if (typeof window === "undefined") {
-      return "dark";
+      return "light";
     }
 
     const saved = window.localStorage.getItem("osonmenu-theme");
-    return saved === "light" ? "light" : "dark";
+    return saved === "dark" ? "dark" : "light";
   });
 
   useEffect(() => {
