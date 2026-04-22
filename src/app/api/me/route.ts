@@ -12,12 +12,12 @@ function getBearerToken(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  try {
-    const token = getBearerToken(request);
-    if (!token) {
-      return NextResponse.json({ user: null }, { status: 200 });
-    }
+  const token = getBearerToken(request);
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
+  try {
     const decoded = await getAdminAuth().verifyIdToken(token);
     await connectToMongoDB();
 
@@ -37,7 +37,8 @@ export async function GET(request: NextRequest) {
         createdAt: user.createdAt,
       },
     });
-  } catch {
-    return NextResponse.json({ user: null }, { status: 200 });
+  } catch (error) {
+    console.error("[API /api/me GET] Failed to fetch user", error);
+    return NextResponse.json({ error: "Failed to fetch user" }, { status: 500 });
   }
 }

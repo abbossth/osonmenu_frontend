@@ -89,7 +89,19 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 },
     );
-  } catch {
+  } catch (error: unknown) {
+    const isDuplicateKey =
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      typeof (error as { code?: unknown }).code === "number" &&
+      (error as { code: number }).code === 11000;
+
+    if (isDuplicateKey) {
+      return NextResponse.json({ error: "User already exists" }, { status: 409 });
+    }
+
+    console.error("[API /api/register POST] Registration failed", error);
     return NextResponse.json({ error: "Registration failed" }, { status: 500 });
   }
 }

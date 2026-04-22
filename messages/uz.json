@@ -374,6 +374,117 @@
       "generic": "Xatolik yuz berdi. Qayta urinib ko'ring."
     }
   },
+  "ProfilePanel": {
+    "title": "Admin Panel",
+    "tabs": {
+      "places": "Joylar",
+      "profile": "Profil"
+    },
+    "places": {
+      "title": "Muassasalar",
+      "add": "Muassasa qo'shish",
+      "empty": "Hali muassasa yo'q. Birinchisini yarating.",
+      "loading": "Muassasalar yuklanmoqda...",
+      "modal": {
+        "title": "Muassasa qo'shish",
+        "save": "Yaratish",
+        "cancel": "Bekor qilish",
+        "success": "Muassasa muvaffaqiyatli yaratildi."
+      }
+    },
+    "establishment": {
+      "name": "Muassasa nomi",
+      "slug": "URL uchun qisqa nom",
+      "url": "URL",
+      "currency": "Valyuta",
+      "language": "Asosiy til",
+      "createdAt": "Yaratilgan sana",
+      "editMenu": "Menyuni tahrirlash"
+    },
+    "profile": {
+      "userData": "Foydalanuvchi ma'lumotlari",
+      "name": "Ism",
+      "firstName": "Ism",
+      "lastName": "Familiya",
+      "email": "Email",
+      "save": "O'zgarishlarni saqlash",
+      "success": "Profil muvaffaqiyatli yangilandi.",
+      "unsaved": "Saqlanmagan o'zgarishlar mavjud.",
+      "changePassword": "Parolni almashtirish",
+      "newPassword": "Yangi parol",
+      "confirmPassword": "Parolni tasdiqlang",
+      "newPasswordPlaceholder": "Yangi parolni kiriting",
+      "confirmPasswordPlaceholder": "Parolni qayta kiriting",
+      "showPassword": "Ko'rsatish",
+      "hidePassword": "Yashirish",
+      "updatePassword": "Parolni yangilash",
+      "passwordUpdated": "Parol muvaffaqiyatli yangilandi.",
+      "logout": "Chiqish"
+    },
+    "errors": {
+      "requiredField": "Barcha maydonlar to'ldirilishi shart.",
+      "minName": "Kamida 2 ta belgi kiriting.",
+      "slugInvalid": "Slug faqat kichik harf va raqamlardan iborat bo'lishi kerak.",
+      "slugDuplicate": "Bu slug allaqachon band.",
+      "passwordMin": "Parol kamida 6 ta belgidan iborat bo'lishi kerak.",
+      "passwordMismatch": "Parollar mos emas.",
+      "generic": "Xatolik yuz berdi. Qayta urinib ko'ring."
+    },
+    "menuBuilder": {
+      "title": "Menyu konstruktori",
+      "actions": {
+        "add": "Qo'shish",
+        "edit": "Tahrirlash",
+        "rename": "Nomini o'zgartirish",
+        "delete": "O'chirish",
+        "save": "Saqlash",
+        "cancel": "Bekor qilish"
+      },
+      "categories": {
+        "title": "Kategoriyalar",
+        "add": "Kategoriya qo'shish",
+        "empty": "Hali kategoriya yo'q",
+        "modalTitle": "Kategoriya qo'shish",
+        "name": "Kategoriya nomi"
+      },
+      "items": {
+        "title": "Taomlar",
+        "add": "Taom qo'shish",
+        "empty": "Hali taom yo'q",
+        "noCategory": "Avval kategoriyani tanlang yoki yarating",
+        "addModalTitle": "Taom qo'shish",
+        "editModalTitle": "Taomni tahrirlash",
+        "name": "Nomi",
+        "description": "Tavsif",
+        "price": "Narx",
+        "image": "Rasm",
+        "uploadImage": "Rasm yuklash",
+        "badge": "Belgi",
+        "badgeNone": "Yo'q"
+      },
+      "badges": {
+        "popular": "Mashhur",
+        "new": "Yangi"
+      },
+      "errors": {
+        "fetchMenu": "Menyu yuklanmadi.",
+        "categoryCreate": "Kategoriya yaratilmadi.",
+        "categoryUpdate": "Kategoriya yangilanmadi.",
+        "categoryDelete": "Kategoriya o'chirilmadi.",
+        "categoryReorder": "Kategoriya tartibi saqlanmadi.",
+        "itemCreate": "Taom yaratilmadi.",
+        "itemUpdate": "Taom yangilanmadi.",
+        "itemDelete": "Taom o'chirilmadi.",
+        "itemReorder": "Taom tartibi saqlanmadi.",
+        "categoryNameRequired": "Kategoriya nomi majburiy.",
+        "categoryPending": "Kategoriya yaratilmoqda. Iltimos, biroz kuting.",
+        "itemNameRequired": "Taom nomi majburiy.",
+        "itemPriceRequired": "Narx majburiy."
+      },
+      "confirmDeleteCategory": "Ushbu kategoriyani o'chirasizmi?",
+      "confirmDeleteItem": "Ushbu taomni o'chirasizmi?"
+    }
+  },
   "FinalCta": {
     "title": "O'zi sotadigan menyuga tayyormisiz?",
     "subtitle": "Yuzlab joylar bu hafta tezroq menyu chiqaryapti. Taomlaringizni ko'chiramiz — yoki bir soat ichida noldan boshlaysiz.",

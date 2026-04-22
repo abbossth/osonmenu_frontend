@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { onAuthStateChanged, signOut, type User as FirebaseUser } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase";
 
-type AppUser = {
+export type AppUser = {
   _id: string;
   firebaseUid: string;
   email: string;
@@ -19,6 +19,7 @@ type AuthContextValue = {
   appUser: AppUser | null;
   loading: boolean;
   logout: () => Promise<void>;
+  setAppUserData: (user: AppUser | null) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -64,6 +65,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             method: "GET",
             headers: { Authorization: `Bearer ${token}` },
           });
+          if (!res.ok) {
+            throw new Error("Failed to fetch current user");
+          }
           const data = (await res.json()) as { user: AppUser | null };
           if (data.user) {
             setAppUser(data.user);
@@ -116,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await signOut(firebaseAuth);
         setAppUser(null);
       },
+      setAppUserData: (user) => setAppUser(user),
     }),
     [appUser, firebaseUser, loading],
   );

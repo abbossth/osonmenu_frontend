@@ -52,7 +52,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
 
   useEffect(() => {
     if (!loading && firebaseUser) {
-      router.replace("/dashboard");
+      router.replace("/profile");
     }
   }, [firebaseUser, loading, router]);
 
@@ -196,13 +196,13 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         }
 
         setSuccessMessage(t("registerSuccess"));
-        setTimeout(() => router.replace("/dashboard"), 1000);
+        setTimeout(() => router.replace("/profile"), 1000);
         return;
       }
 
       const credential = await signInWithEmailAndPassword(getFirebaseAuth(), emailValue, password);
       await credential.user.getIdToken();
-      router.replace("/dashboard");
+      router.replace("/profile");
     } catch (err: unknown) {
       const code =
         typeof err === "object" && err && "code" in err && typeof err.code === "string"

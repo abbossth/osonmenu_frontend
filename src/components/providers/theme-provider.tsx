@@ -18,6 +18,7 @@ type ThemeContextValue = {
 };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
+const THEME_STORAGE_KEY = "osonmenu-theme-v2";
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemeMode>(() => {
@@ -25,14 +26,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       return "light";
     }
 
-    const saved = window.localStorage.getItem("osonmenu-theme");
+    const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
     return saved === "dark" ? "dark" : "light";
   });
 
   useEffect(() => {
     const root = document.documentElement;
     root.classList.toggle("dark", theme === "dark");
-    window.localStorage.setItem("osonmenu-theme", theme);
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
 
   const setTheme = useCallback((nextTheme: ThemeMode) => {

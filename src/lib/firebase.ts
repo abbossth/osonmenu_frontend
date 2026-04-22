@@ -3,6 +3,7 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
+import { getStorage, type FirebaseStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? "AIzaSyBMNy4VpUo3LTjHrAnrawjLVdSgYV-hqo0",
@@ -16,6 +17,7 @@ const firebaseConfig = {
 
 let cachedAuth: Auth | null = null;
 let cachedAnalytics: Analytics | null = null;
+let cachedStorage: FirebaseStorage | null = null;
 
 function getFirebaseApp() {
   return getApps().length ? getApp() : initializeApp(firebaseConfig);
@@ -54,4 +56,17 @@ export async function getFirebaseAnalytics() {
 
   cachedAnalytics = getAnalytics(getFirebaseApp());
   return cachedAnalytics;
+}
+
+export function getFirebaseStorage() {
+  if (cachedStorage) {
+    return cachedStorage;
+  }
+
+  if (typeof window === "undefined") {
+    throw new Error("Firebase storage can only be used in browser runtime.");
+  }
+
+  cachedStorage = getStorage(getFirebaseApp());
+  return cachedStorage;
 }

@@ -1,0 +1,88 @@
+import { NextRequest, NextResponse } from "next/server";
+import { asObjectId, normalizeName, normalizeSlug, verifyUserId, findUserEstablishment } from "@/app/api/_utils/menu-builder";
+
+type Params = { params: Promise<{ id: string }> };
+
+export async function PATCH(request: NextRequest, { params }: Params) {
+  try {
+    const userId = await verifyUserId(request);
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { id } = await params;
+    const body = (await request.json()) as {
+      slug?: string;
+      name?: string;
+      nameI18n?: { uz?: string; ru?: string; en?: string };
+      description?: string;
+      imageUrl?: string;
+      isVisible?: boolean;
+    };
+    const slug = normalizeSlug(body.slug);
+    const name = normalizeName(body.name);
+    const nameI18n = {
+      uz: normalizeName(body.nameI18n?.uz ?? name),
+      ru: normalizeName(body.nameI18n?.ru ?? name),
+      en: normalizeName(body.nameI18n?.en ?? name),
+    };
+    const description = typeof body.description === "string" ? body.description.trim() : "";
+    const imageUrl = typeof body.imageUrl === "string" ? body.imageUrl.trim() : "";
+    const isVisible = typeof body.isVisible === "boolean" ? body.isVisible : true;
+    if (!slug || !name) return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+
+    const categoryObjectId = asObjectId(id);
+    if (!categoryObjectId) return NextResponse.json({ error: "Invalid category id" }, { status: 400 });
+
+    const establishment = await findUserEstablishment(slug, userId);
+    if (!establishment) return NextResponse.json({ error: "Establishment not found" }, { status: 404 });
+    if (!Array.isArray(establishment.categories)) {
+      establishment.categories = [];
+    }
+
+    const category = establishment.categories.id(categoryObjectId);
+    if (!category) return NextResponse.json({ error: "Category not found" }, { status: 404 });
+    category.name = name;
+    category.nameI18n = nameI18n;
+    category.description = description;
+    category.imageUrl = imageUrl;
+    category.isVisible = isVisible;
+    await establishment.save();
+    return NextResponse.json({ category });
+  } catch (error) {
+    console.error("[API /api/categories/:id PATCH] Failed", error);
+    return NextResponse.json({ error: "Failed to update category" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest, { params }: Params) {
+  try {
+    const userId = await verifyUserId(request);
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { id } = await params;
+    const slug = normalizeSlug(request.nextUrl.searchParams.get("slug"));
+    if (!slug) return NextResponse.json({ error: "Missing slug" }, { status: 400 });
+
+    const categoryObjectId = asObjectId(id);
+    if (!categoryObjectId) return NextResponse.json({ error: "Invalid category id" }, { status: 400 });
+
+    const establishment = await findUserEstablishment(slug, userId);
+    if (!establishment) return NextResponse.json({ error: "Establishment not found" }, { status: 404 });
+    if (!Array.isArray(establishment.categories)) {
+      establishment.categories = [];
+    }
+
+    const category = establishment.categories.id(categoryObjectId);
+    if (!category) return NextResponse.json({ error: "Category not found" }, { status: 404 });
+    category.deleteOne();
+
+    establishment.categories.sort((a: { order: number }, b: { order: number }) => a.order - b.order);
+    establishment.categories.forEach((item: { order: number }, index: number) => {
+      item.order = index;
+    });
+    await establishment.save();
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("[API /api/categories/:id DELETE] Failed", error);
+    return NextResponse.json({ error: "Failed to delete category" }, { status: 500 });
+  }
+}
+

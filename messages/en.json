@@ -374,6 +374,117 @@
       "generic": "Something went wrong. Please try again."
     }
   },
+  "ProfilePanel": {
+    "title": "Admin Panel",
+    "tabs": {
+      "places": "Places",
+      "profile": "Profile"
+    },
+    "places": {
+      "title": "Establishments",
+      "add": "Add Establishment",
+      "empty": "No establishments yet. Create your first place.",
+      "loading": "Loading establishments...",
+      "modal": {
+        "title": "Add Establishment",
+        "save": "Create",
+        "cancel": "Cancel",
+        "success": "Establishment created successfully."
+      }
+    },
+    "establishment": {
+      "name": "Establishment Name",
+      "slug": "Short name in URL",
+      "url": "URL",
+      "currency": "Currency",
+      "language": "Language",
+      "createdAt": "Created at",
+      "editMenu": "Edit menu"
+    },
+    "profile": {
+      "userData": "User Data",
+      "name": "Name",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email",
+      "save": "Save Changes",
+      "success": "Profile updated successfully.",
+      "unsaved": "You have unsaved changes.",
+      "changePassword": "Change Password",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm Password",
+      "newPasswordPlaceholder": "Enter new password",
+      "confirmPasswordPlaceholder": "Re-enter password",
+      "showPassword": "Show",
+      "hidePassword": "Hide",
+      "updatePassword": "Update Password",
+      "passwordUpdated": "Password updated successfully.",
+      "logout": "Logout"
+    },
+    "errors": {
+      "requiredField": "All fields are required.",
+      "minName": "Must be at least 2 characters.",
+      "slugInvalid": "Slug must contain only lowercase letters and digits.",
+      "slugDuplicate": "This slug is already taken.",
+      "passwordMin": "Password must be at least 6 characters.",
+      "passwordMismatch": "Passwords do not match.",
+      "generic": "Something went wrong. Please try again."
+    },
+    "menuBuilder": {
+      "title": "Menu Builder",
+      "actions": {
+        "add": "Add",
+        "edit": "Edit",
+        "rename": "Rename",
+        "delete": "Delete",
+        "save": "Save",
+        "cancel": "Cancel"
+      },
+      "categories": {
+        "title": "Categories",
+        "add": "Add Category",
+        "empty": "No categories yet",
+        "modalTitle": "Add Category",
+        "name": "Category Name"
+      },
+      "items": {
+        "title": "Items",
+        "add": "Add Item",
+        "empty": "No items yet",
+        "noCategory": "Select or create a category first",
+        "addModalTitle": "Add Item",
+        "editModalTitle": "Edit Item",
+        "name": "Name",
+        "description": "Description",
+        "price": "Price",
+        "image": "Image",
+        "uploadImage": "Upload image",
+        "badge": "Badge",
+        "badgeNone": "None"
+      },
+      "badges": {
+        "popular": "Popular",
+        "new": "New"
+      },
+      "errors": {
+        "fetchMenu": "Failed to load menu.",
+        "categoryCreate": "Failed to create category.",
+        "categoryUpdate": "Failed to update category.",
+        "categoryDelete": "Failed to delete category.",
+        "categoryReorder": "Failed to reorder categories.",
+        "itemCreate": "Failed to create item.",
+        "itemUpdate": "Failed to update item.",
+        "itemDelete": "Failed to delete item.",
+        "itemReorder": "Failed to reorder items.",
+        "categoryNameRequired": "Category name is required.",
+        "categoryPending": "Category is being created. Please wait a second.",
+        "itemNameRequired": "Item name is required.",
+        "itemPriceRequired": "Price is required."
+      },
+      "confirmDeleteCategory": "Delete this category?",
+      "confirmDeleteItem": "Delete this item?"
+    }
+  },
   "FinalCta": {
     "title": "Ready to serve a menu that sells itself?",
     "subtitle": "Join hundreds of venues shipping faster menus this week. We'll migrate your items—or you can start from scratch in under an hour.",
