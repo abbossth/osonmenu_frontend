@@ -12,6 +12,7 @@ type ItemCardProps = {
   price: number;
   currencySymbol?: string;
   badge?: MenuBadge;
+  accentColor?: string;
   isAdmin?: boolean;
   onMoveUp?: (id: string) => void;
   onMoveDown?: (id: string) => void;
@@ -33,6 +34,7 @@ export function ItemCard({
   price,
   badge = null,
   currencySymbol = "",
+  accentColor = "#ff4048",
   isAdmin = false,
   onMoveUp,
   onMoveDown,
@@ -57,7 +59,7 @@ export function ItemCard({
             <div className="h-48 w-full bg-neutral-800" />
           )}
           {badge ? (
-            <span className="absolute left-3 top-3 rounded-full bg-[#ff4048] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
+            <span className="absolute left-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white" style={{ backgroundColor: accentColor }}>
               {badge}
             </span>
           ) : null}
@@ -73,14 +75,15 @@ export function ItemCard({
         <div className="space-y-1 p-3">
           <h4 className="text-lg font-semibold text-white">{name}</h4>
           <p className="line-clamp-2 text-sm text-neutral-400">{description}</p>
-          <p className="pt-1 text-2xl font-semibold text-[#ff4048]">{formatPrice(price, currencySymbol)}</p>
+          <p className="pt-1 text-2xl font-semibold" style={{ color: accentColor }}>{formatPrice(price, currencySymbol)}</p>
         </div>
       </motion.article>
       {isAdmin ? (
         <button
           type="button"
           onClick={() => onAddUnder?.(id)}
-          className="inline-flex w-full items-center justify-center rounded-full bg-orange-300 py-1 text-2xl text-white transition hover:bg-orange-400"
+          className="inline-flex w-full items-center justify-center rounded-full py-1 text-2xl text-white transition brightness-95 hover:brightness-105"
+          style={{ backgroundColor: accentColor }}
         >
           +
         </button>

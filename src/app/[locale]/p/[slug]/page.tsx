@@ -153,6 +153,9 @@ export default function PublicMenuPage() {
       : activeMenuCategories[0]?._id ?? null;
   const activeCategory = activeMenuCategories.find((category) => category._id === resolvedActiveCategoryId) ?? null;
   const isAdminMode = Boolean(firebaseUser?.uid && place?.ownerId && firebaseUser.uid === place.ownerId);
+  const isLightTheme = (place?.colorTheme ?? "light") === "light";
+  const accentColor = place?.color?.trim() || "#f7906c";
+  const detailsLine = [place?.phone, place?.address, place?.googleMapsLink].filter(Boolean).join("  •  ");
 
   function pickLocalized(text: MenuLocalizedText | undefined, fallback: string) {
     if (!text) return fallback;
@@ -623,7 +626,7 @@ export default function PublicMenuPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f] text-neutral-100">
+    <div className={isLightTheme ? "min-h-screen bg-neutral-100 text-neutral-900" : "min-h-screen bg-[#0f0f0f] text-neutral-100"}>
       {error ? (
         <div className="mx-auto mb-2 max-w-[620px] rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
           {error}
@@ -631,7 +634,7 @@ export default function PublicMenuPage() {
       ) : null}
 
       {pageLoading ? (
-        <div className="mx-auto max-w-[620px] rounded-[28px] border border-white/10 bg-[#121212] p-6 shadow-sm">
+        <div className={`mx-auto max-w-[620px] rounded-[28px] p-6 shadow-sm ${isLightTheme ? "border border-neutral-200 bg-white" : "border border-white/10 bg-[#121212]"}`}>
           <div className="h-40 animate-pulse rounded-2xl bg-neutral-800" />
           <div className="mt-5 h-8 w-48 animate-pulse rounded-lg bg-neutral-800" />
           <div className="mt-3 h-5 w-72 animate-pulse rounded-lg bg-neutral-800" />
@@ -639,8 +642,24 @@ export default function PublicMenuPage() {
           <div className="mt-4 h-28 animate-pulse rounded-2xl bg-neutral-800" />
         </div>
       ) : (
-        <div className="mx-auto max-w-[620px] overflow-hidden rounded-[28px] border border-white/10 bg-[#121212] shadow-sm">
-          <div className="relative h-44 bg-[radial-gradient(circle_at_20%_20%,#b34b5f,transparent_45%),radial-gradient(circle_at_80%_30%,#e08a9b,transparent_50%),radial-gradient(circle_at_50%_80%,#945666,transparent_40%),linear-gradient(135deg,#6f3243,#bd6778)]">
+        <div className={`mx-auto max-w-[620px] overflow-hidden rounded-[28px] shadow-sm ${isLightTheme ? "border border-neutral-200 bg-white" : "border border-white/10 bg-[#121212]"}`}>
+          <div
+            className="relative h-44 overflow-hidden"
+            style={
+              place?.backgroundImage
+                ? {
+                    backgroundImage: `url(${place.backgroundImage})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                  }
+                : undefined
+            }
+          >
+            {!place?.backgroundImage ? (
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,#b34b5f,transparent_45%),radial-gradient(circle_at_80%_30%,#e08a9b,transparent_50%),radial-gradient(circle_at_50%_80%,#945666,transparent_40%),linear-gradient(135deg,#6f3243,#bd6778)]" />
+            ) : (
+              <div className="absolute inset-0 bg-black/20" />
+            )}
             {isAdminMode ? (
               <button
                 type="button"
@@ -650,11 +669,19 @@ export default function PublicMenuPage() {
                 ×
               </button>
             ) : null}
+            {place?.logoUrl ? (
+              <div className="pointer-events-none absolute inset-0 grid place-items-center">
+                <div className="h-20 w-20 overflow-hidden rounded-full border-2 border-white/80 bg-white shadow-lg">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={place.logoUrl} alt={place.name} className="h-full w-full object-cover" />
+                </div>
+              </div>
+            ) : null}
           </div>
 
-          <div className="-mt-4 rounded-t-[28px] bg-[#121212] p-4 sm:p-5">
+          <div className={`-mt-4 rounded-t-[28px] p-4 sm:p-5 ${isLightTheme ? "bg-white" : "bg-[#121212]"}`}>
             <div className="flex items-center gap-2">
-              <h1 className="text-5xl font-semibold text-white">{place?.name ?? "ABBOS"}</h1>
+              <h1 className={`text-5xl font-semibold ${isLightTheme ? "text-neutral-900" : "text-white"}`}>{place?.name ?? "ABBOS"}</h1>
               {isAdminMode ? (
                 <button
                   type="button"
@@ -665,10 +692,11 @@ export default function PublicMenuPage() {
                 </button>
               ) : null}
             </div>
-            <p className="mt-2 text-sm text-neutral-400">
+            <p className={`mt-2 text-sm ${isLightTheme ? "text-neutral-600" : "text-neutral-400"}`}>
               ◉ {place?.city || "Awesome City"}, {place?.country || "The Best Country"}   〰 {place?.wifiPassword || "CoolWiFiPassword"}
             </p>
-            <p className="mt-2 text-sm text-neutral-300">
+            {detailsLine ? <p className={`mt-1 text-xs ${isLightTheme ? "text-neutral-500" : "text-neutral-400"}`}>{detailsLine}</p> : null}
+            <p className={`mt-2 text-sm ${isLightTheme ? "text-neutral-700" : "text-neutral-300"}`}>
               {place?.additionalInfo || "Here you can add any additional information about your QR code menu"}
             </p>
 
@@ -676,6 +704,8 @@ export default function PublicMenuPage() {
               <MenuTabs
                 menus={orderedMenus.map((menu) => ({ id: menu.id, name: menu.name }))}
                 activeMenuId={resolvedActiveMenuId}
+                accentColor={accentColor}
+                isLight={isLightTheme}
                 isAdmin={isAdminMode}
                 onMoveLeft={(menuId) => moveMenu(menuId, "left")}
                 onMoveRight={(menuId) => moveMenu(menuId, "right")}
@@ -687,14 +717,14 @@ export default function PublicMenuPage() {
               />
             </div>
 
-            <div className="mt-4 flex items-center rounded-full bg-white/5 px-4 py-2.5">
+            <div className={`mt-4 flex items-center rounded-full px-4 py-2.5 ${isLightTheme ? "bg-neutral-100" : "bg-white/5"}`}>
               <input
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search"
-                className="w-full bg-transparent text-base text-neutral-200 outline-none"
+                className={`w-full bg-transparent text-base outline-none ${isLightTheme ? "text-neutral-700" : "text-neutral-200"}`}
               />
-              <span className="grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-black/40 text-lg text-neutral-400">
+              <span className={`grid h-8 w-8 place-items-center rounded-full text-lg ${isLightTheme ? "border border-neutral-300 bg-white text-neutral-500" : "border border-white/10 bg-black/40 text-neutral-400"}`}>
                 ⌕
               </span>
             </div>
@@ -705,7 +735,8 @@ export default function PublicMenuPage() {
                 <button
                   type="button"
                   onClick={openCreateCategoryModal}
-                  className="mt-2 inline-flex w-full items-center justify-center rounded-full bg-orange-300 py-1.5 text-2xl text-white transition hover:bg-orange-400"
+                  className="mt-2 inline-flex w-full items-center justify-center rounded-full py-1.5 text-2xl text-white transition brightness-95 hover:brightness-105"
+                  style={{ backgroundColor: accentColor }}
                 >
                   +
                 </button>
@@ -720,6 +751,7 @@ export default function PublicMenuPage() {
                   imageUrl: category.imageUrl,
                 }))}
                 activeCategoryId={resolvedActiveCategoryId}
+                accentColor={accentColor}
                 isAdmin={isAdminMode}
                 onMoveUp={(categoryId) => void moveCategory(categoryId, "left")}
                 onMoveDown={(categoryId) => void moveCategory(categoryId, "right")}
@@ -740,7 +772,7 @@ export default function PublicMenuPage() {
 
           {isAdminMode ? (
             <div className="fixed bottom-0 left-1/2 z-20 flex w-full max-w-[620px] -translate-x-1/2 items-center justify-around border-t border-neutral-200 bg-white py-2 dark:border-neutral-800 dark:bg-neutral-900">
-              <button type="button" className="text-center text-xs text-orange-400">
+              <button type="button" className="text-center text-xs" style={{ color: accentColor }}>
                 <div className="text-base">✎</div>
                 Edit menu
               </button>
@@ -949,11 +981,20 @@ export default function PublicMenuPage() {
               </label>
               <label>
                 <span className="mb-1 block text-sm text-neutral-500 dark:text-neutral-400">Color</span>
-                <input
-                  value={establishmentForm.color}
-                  onChange={(e) => setEstablishmentForm((c) => ({ ...c, color: e.target.value }))}
-                  className="w-full rounded-xl bg-neutral-100 px-3 py-2.5 text-sm text-neutral-800 outline-none dark:bg-neutral-800 dark:text-neutral-100"
-                />
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={establishmentForm.color || "#f7906c"}
+                    onChange={(e) => setEstablishmentForm((c) => ({ ...c, color: e.target.value }))}
+                    className="h-11 w-14 cursor-pointer rounded-xl border border-neutral-300 bg-white p-1 dark:border-neutral-700 dark:bg-neutral-950"
+                  />
+                  <input
+                    value={establishmentForm.color}
+                    onChange={(e) => setEstablishmentForm((c) => ({ ...c, color: e.target.value }))}
+                    className="w-full rounded-xl bg-neutral-100 px-3 py-2.5 text-sm text-neutral-800 outline-none dark:bg-neutral-800 dark:text-neutral-100"
+                    placeholder="#f7906c"
+                  />
+                </div>
               </label>
               <label>
                 <span className="mb-1 block text-sm text-neutral-500 dark:text-neutral-400">Currency *</span>

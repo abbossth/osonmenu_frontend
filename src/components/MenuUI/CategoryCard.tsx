@@ -7,6 +7,7 @@ type CategoryCardProps = {
   name: string;
   imageUrl?: string;
   active: boolean;
+  accentColor?: string;
   isAdmin?: boolean;
   onMoveUp?: (id: string) => void;
   onMoveDown?: (id: string) => void;
@@ -21,6 +22,7 @@ export function CategoryCard({
   name,
   imageUrl,
   active,
+  accentColor = "#ff4048",
   isAdmin = false,
   onMoveUp,
   onMoveDown,
@@ -37,8 +39,9 @@ export function CategoryCard({
         whileTap={{ scale: 0.98 }}
         whileHover={{ scale: 1.01 }}
         className={`relative w-full overflow-hidden rounded-2xl border text-left transition ${
-          active ? "border-[#ff4048]/70 shadow-[0_0_0_2px_rgba(255,64,72,0.28)]" : "border-white/10"
+          active ? "shadow-[0_0_0_2px_rgba(255,64,72,0.28)]" : "border-white/10"
         }`}
+        style={active ? { borderColor: accentColor } : undefined}
       >
         {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -63,7 +66,8 @@ export function CategoryCard({
         <button
           type="button"
           onClick={() => onAddUnder?.(id)}
-          className="inline-flex w-full items-center justify-center rounded-full bg-orange-300 py-1 text-2xl text-white transition hover:bg-orange-400"
+          className="inline-flex w-full items-center justify-center rounded-full py-1 text-2xl text-white transition brightness-95 hover:brightness-105"
+          style={{ backgroundColor: accentColor }}
         >
           +
         </button>

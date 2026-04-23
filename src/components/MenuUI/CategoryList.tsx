@@ -12,6 +12,7 @@ type CategoryItem = {
 type CategoryListProps = {
   categories: CategoryItem[];
   activeCategoryId: string | null;
+  accentColor?: string;
   isAdmin?: boolean;
   onMoveUp?: (categoryId: string) => void;
   onMoveDown?: (categoryId: string) => void;
@@ -24,6 +25,7 @@ type CategoryListProps = {
 export function CategoryList({
   categories,
   activeCategoryId,
+  accentColor = "#ff4048",
   isAdmin = false,
   onMoveUp,
   onMoveDown,
@@ -48,6 +50,7 @@ export function CategoryList({
               name={category.name}
               imageUrl={category.imageUrl}
               active={category.id === activeCategoryId}
+              accentColor={accentColor}
               isAdmin={isAdmin}
               onMoveUp={onMoveUp}
               onMoveDown={onMoveDown}
