@@ -140,8 +140,7 @@ export default function CategoryItemsPage() {
 
   function onMenuSelect(menuId: string) {
     setActiveMenuId(menuId);
-    const firstCategoryId = orderedMenus.find((menu) => menu.id === menuId)?.categories[0]?._id;
-    if (firstCategoryId) router.push(`/${locale}/p/${slug}/${firstCategoryId}`);
+    router.push(`/${locale}/p/${slug}?menu=${menuId}`);
   }
 
   async function createMenu(insertSide: "left" | "right") {
@@ -429,13 +428,28 @@ export default function CategoryItemsPage() {
               </span>
             </div>
 
-            <div className="mt-4 space-y-4 pb-4">
+            <div className={`mt-4 space-y-4 ${isAdminMode ? "pb-20" : "pb-4"}`}>
               <h3 className="text-xl font-semibold text-neutral-100">
                 {activeCategory ? pickLocalized(locale, activeCategory.nameI18n, activeCategory.name) : "Category"}
               </h3>
               {filteredItems.length === 0 ? (
-                <div className="w-full rounded-2xl border border-dashed border-neutral-700 p-8 text-center text-sm text-neutral-500">
-                  Items not found
+                <div className="space-y-3">
+                  <div className="w-full rounded-2xl border border-dashed border-neutral-700 p-8 text-center text-sm text-neutral-500">
+                    Items not found
+                  </div>
+                  {isAdminMode ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingItem(null);
+                        setItemModalOpen(true);
+                      }}
+                      className="inline-flex w-full items-center justify-center rounded-full py-1 text-2xl text-white transition brightness-95 hover:brightness-105"
+                      style={{ backgroundColor: accentColor }}
+                    >
+                      +
+                    </button>
+                  ) : null}
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -484,6 +498,35 @@ export default function CategoryItemsPage() {
           </div>
         </div>
       )}
+      {isAdminMode ? (
+        <div className="fixed bottom-0 left-1/2 z-20 flex w-full max-w-[620px] -translate-x-1/2 items-center justify-around border-t border-neutral-200 bg-white py-2 dark:border-neutral-800 dark:bg-neutral-900">
+          <button
+            type="button"
+            onClick={() => router.push(`/${locale}/p/${slug}`)}
+            className="cursor-pointer text-center text-xs text-neutral-500"
+          >
+            <div className="text-base">✎</div>
+            Edit menu
+          </button>
+          <button type="button" className="cursor-pointer text-center text-xs text-neutral-500">
+            <div className="text-base">🧩</div>
+            Components
+          </button>
+          <button
+            type="button"
+            onClick={() => router.push(`/${locale}/p/${slug}/qr-code`)}
+            className="cursor-pointer text-center text-xs"
+            style={{ color: accentColor }}
+          >
+            <div className="text-base">⌗</div>
+            QR code
+          </button>
+          <button type="button" className="cursor-pointer text-center text-xs text-neutral-500">
+            <div className="text-base">⋯</div>
+            More
+          </button>
+        </div>
+      ) : null}
       {isAdminMode ? (
         <AddItemModal
           open={itemModalOpen}

@@ -47,7 +47,7 @@ export function MenuTabs({
           <button
             type="button"
             onClick={onAddLeft}
-            className="h-8 w-8 shrink-0 self-start rounded-full text-sm font-semibold text-white"
+            className="h-8 w-8 shrink-0 cursor-pointer self-start rounded-full text-sm font-semibold text-white"
             style={{ backgroundColor: accentColor }}
           >
             +
@@ -60,9 +60,12 @@ export function MenuTabs({
               <button
                 type="button"
                 onClick={() => onSelect(menu.id)}
-                className={`relative rounded-full px-5 py-2 text-sm font-semibold transition ${
-                  active ? "text-white" : isLight ? "text-neutral-600 hover:text-neutral-900" : "text-neutral-300 hover:text-white"
+                className={`relative cursor-pointer rounded-full px-5 py-2 text-sm font-semibold transition ${
+                  active
+                    ? "text-white"
+                    : "border hover:brightness-95"
                 }`}
+                style={!active ? { borderColor: accentColor, color: accentColor } : undefined}
               >
                 {active ? (
                   <motion.span
@@ -80,10 +83,10 @@ export function MenuTabs({
                     isLight ? "border border-neutral-200 bg-neutral-100 text-neutral-700" : "border border-white/10 bg-black/40 text-white"
                   }`}
                 >
-                  <button type="button" onClick={() => onMoveLeft?.(menu.id)}>↩</button>
-                  <button type="button" onClick={() => onEdit?.(menu.id)}>✎</button>
-                  <button type="button" onClick={() => onMoveRight?.(menu.id)}>↪</button>
-                  <button type="button" onClick={() => onDelete?.(menu.id)}>🗑</button>
+                  <button type="button" onClick={() => onMoveLeft?.(menu.id)} className="cursor-pointer">↩</button>
+                  <button type="button" onClick={() => onEdit?.(menu.id)} className="cursor-pointer">✎</button>
+                  <button type="button" onClick={() => onMoveRight?.(menu.id)} className="cursor-pointer">↪</button>
+                  <button type="button" onClick={() => onDelete?.(menu.id)} className="cursor-pointer">🗑</button>
                 </div>
               ) : null}
             </div>
@@ -93,7 +96,7 @@ export function MenuTabs({
           <button
             type="button"
             onClick={onAddRight}
-            className="h-8 w-8 shrink-0 self-start rounded-full text-sm font-semibold text-white"
+            className="h-8 w-8 shrink-0 cursor-pointer self-start rounded-full text-sm font-semibold text-white"
             style={{ backgroundColor: accentColor }}
           >
             +

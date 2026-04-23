@@ -33,9 +33,16 @@ export function CategoryCard({
 }: CategoryCardProps) {
   return (
     <div className="space-y-2">
-      <motion.button
-        type="button"
+      <motion.div
+        role="button"
+        tabIndex={0}
         onClick={() => onClick(id)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onClick(id);
+          }
+        }}
         whileTap={{ scale: 0.98 }}
         whileHover={{ scale: 1.01 }}
         className={`relative w-full overflow-hidden rounded-2xl border text-left transition ${
@@ -61,7 +68,7 @@ export function CategoryCard({
             <button type="button" onClick={(event) => { event.stopPropagation(); onDelete?.(id); }}>🗑</button>
           </div>
         ) : null}
-      </motion.button>
+      </motion.div>
       {isAdmin ? (
         <button
           type="button"

@@ -164,7 +164,7 @@ export async function GET(request: NextRequest, { params }: Params) {
         additionalInfo:
           typeof establishment.additionalInfo === "string"
             ? establishment.additionalInfo
-            : "Here you can add any additional information about your QR code menu",
+            : "",
         currency: establishment.currency,
         language: establishment.language,
         menus,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { AddItemModal } from "@/components/MenuBuilder/AddItemModal";
 import { CategoryList } from "@/components/MenuUI/CategoryList";
@@ -83,9 +83,11 @@ export default function PublicMenuPage() {
   const { firebaseUser } = useAuth();
   const params = useParams<{ slug: string; locale: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const slug = typeof params.slug === "string" ? params.slug : "";
   const locale = params.locale === "ru" || params.locale === "en" ? params.locale : "uz";
+  const menuFromQuery = searchParams.get("menu");
   const [place, setPlace] = useState<MenuPlace | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
@@ -143,8 +145,11 @@ export default function PublicMenuPage() {
     const rank = new Map(menuOrder.map((id, index) => [id, index]));
     return [...menus].sort((a, b) => (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER));
   }, [menuOrder, menus]);
+  const queryMenuId =
+    menuFromQuery && orderedMenus.some((menu) => menu.id === menuFromQuery) ? menuFromQuery : null;
   const resolvedActiveMenuId =
-    activeMenuId && orderedMenus.some((menu) => menu.id === activeMenuId) ? activeMenuId : orderedMenus[0]?.id ?? null;
+    queryMenuId ??
+    (activeMenuId && orderedMenus.some((menu) => menu.id === activeMenuId) ? activeMenuId : orderedMenus[0]?.id ?? null);
   const activeMenu = orderedMenus.find((menu) => menu.id === resolvedActiveMenuId) ?? null;
   const activeMenuCategories = activeMenu?.categories ?? [];
   const resolvedActiveCategoryId =
@@ -547,6 +552,7 @@ export default function PublicMenuPage() {
     const nextCategoryId = orderedMenus.find((menu) => menu.id === menuId)?.categories[0]?._id ?? null;
     setActiveCategoryId(nextCategoryId);
     setSearchQuery("");
+    router.replace(`/${locale}/p/${slug}?menu=${menuId}`);
   }
 
   function moveMenu(menuId: string, direction: "left" | "right") {
@@ -696,9 +702,11 @@ export default function PublicMenuPage() {
               ◉ {place?.city || "Awesome City"}, {place?.country || "The Best Country"}   〰 {place?.wifiPassword || "CoolWiFiPassword"}
             </p>
             {detailsLine ? <p className={`mt-1 text-xs ${isLightTheme ? "text-neutral-500" : "text-neutral-400"}`}>{detailsLine}</p> : null}
-            <p className={`mt-2 text-sm ${isLightTheme ? "text-neutral-700" : "text-neutral-300"}`}>
-              {place?.additionalInfo || "Here you can add any additional information about your QR code menu"}
-            </p>
+            {place?.additionalInfo?.trim() ? (
+              <p className={`mt-2 text-sm ${isLightTheme ? "text-neutral-700" : "text-neutral-300"}`}>
+                {place.additionalInfo}
+              </p>
+            ) : null}
 
             <div className="mt-3">
               <MenuTabs
@@ -772,19 +780,23 @@ export default function PublicMenuPage() {
 
           {isAdminMode ? (
             <div className="fixed bottom-0 left-1/2 z-20 flex w-full max-w-[620px] -translate-x-1/2 items-center justify-around border-t border-neutral-200 bg-white py-2 dark:border-neutral-800 dark:bg-neutral-900">
-              <button type="button" className="text-center text-xs" style={{ color: accentColor }}>
+              <button type="button" className="cursor-pointer text-center text-xs" style={{ color: accentColor }}>
                 <div className="text-base">✎</div>
                 Edit menu
               </button>
-              <button type="button" className="text-center text-xs text-neutral-500">
+              <button type="button" className="cursor-pointer text-center text-xs text-neutral-500">
                 <div className="text-base">🧩</div>
                 Components
               </button>
-              <button type="button" className="text-center text-xs text-neutral-500">
+              <button
+                type="button"
+                onClick={() => router.push(`/${locale}/p/${slug}/qr-code`)}
+                className="cursor-pointer text-center text-xs text-neutral-500"
+              >
                 <div className="text-base">⌗</div>
                 QR code
               </button>
-              <button type="button" className="text-center text-xs text-neutral-500">
+              <button type="button" className="cursor-pointer text-center text-xs text-neutral-500">
                 <div className="text-base">⋯</div>
                 More
               </button>
