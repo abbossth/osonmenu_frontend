@@ -29,6 +29,8 @@ export type EstablishmentDocument = {
   language: "uz" | "ru" | "en";
   categories: {
     _id: string;
+    menuId: string;
+    menuName: string;
     name: string;
     description?: string;
     imageUrl?: string;
@@ -43,6 +45,12 @@ export type EstablishmentDocument = {
       badge?: "popular" | "new" | null;
       order: number;
     }[];
+  }[];
+  menus?: {
+    id: string;
+    name: string;
+    order: number;
+    isVisible?: boolean;
   }[];
   createdAt: Date;
 };
@@ -71,6 +79,8 @@ const menuItemSchema = new Schema(
 
 const menuCategorySchema = new Schema(
   {
+    menuId: { type: String, default: "main", trim: true },
+    menuName: { type: String, default: "Menu", trim: true },
     name: { type: String, required: true, trim: true },
     nameI18n: {
       uz: { type: String, default: "", trim: true },
@@ -114,6 +124,20 @@ const establishmentSchema = new Schema<EstablishmentDocument>(
     additionalInfo: { type: String, default: "Here you can add any additional information about your QR code menu", trim: true },
     currency: { type: String, required: true, enum: ["UZS", "USD"] },
     language: { type: String, required: true, enum: ["uz", "ru", "en"] },
+    menus: {
+      type: [
+        new Schema(
+          {
+            id: { type: String, required: true, trim: true },
+            name: { type: String, required: true, trim: true },
+            order: { type: Number, required: true, default: 0 },
+            isVisible: { type: Boolean, default: true },
+          },
+          { _id: false },
+        ),
+      ],
+      default: [{ id: "main", name: "Menu", order: 0, isVisible: true }],
+    },
     categories: { type: [menuCategorySchema], default: [] },
     createdAt: { type: Date, default: Date.now },
   },

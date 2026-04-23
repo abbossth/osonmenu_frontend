@@ -104,6 +104,7 @@ export async function POST(request: NextRequest) {
       slug,
       currency,
       language,
+      menus: [{ id: "main", name: "Menu", order: 0, isVisible: true }],
       categories: buildDefaultMenu(language),
     });
 

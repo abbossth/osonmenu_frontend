@@ -6,8 +6,9 @@ export async function PATCH(request: NextRequest) {
     const userId = await verifyUserId(request);
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const body = (await request.json()) as { slug?: string; categoryIds?: string[] };
+    const body = (await request.json()) as { slug?: string; menuId?: string; categoryIds?: string[] };
     const slug = normalizeSlug(body.slug);
+    const menuId = normalizeSlug(body.menuId) || "main";
     const categoryIds = Array.isArray(body.categoryIds) ? body.categoryIds : [];
 
     if (!slug || categoryIds.length === 0) {
@@ -21,11 +22,14 @@ export async function PATCH(request: NextRequest) {
     }
 
     const rankMap = new Map(categoryIds.map((id, index) => [id, index]));
-    establishment.categories.forEach((category: { _id: unknown; order: number }, index: number) => {
+    const scoped = establishment.categories.filter(
+      (category: { menuId?: string }) => (category.menuId || "main") === menuId,
+    );
+    scoped.forEach((category: { _id: unknown; order: number }, index: number) => {
       category.order = rankMap.get(String(category._id)) ?? index;
     });
-    establishment.categories.sort((a: { order: number }, b: { order: number }) => a.order - b.order);
-    establishment.categories.forEach((category: { order: number }, index: number) => {
+    scoped.sort((a: { order: number }, b: { order: number }) => a.order - b.order);
+    scoped.forEach((category: { order: number }, index: number) => {
       category.order = index;
     });
     await establishment.save();

@@ -13,6 +13,8 @@ export async function POST(request: NextRequest) {
 
     const body = (await request.json()) as {
       slug?: string;
+      menuId?: string;
+      menuName?: string;
       name?: string;
       nameI18n?: { uz?: string; ru?: string; en?: string };
       description?: string;
@@ -20,6 +22,8 @@ export async function POST(request: NextRequest) {
       isVisible?: boolean;
     };
     const slug = normalizeSlug(body.slug);
+    const menuId = normalizeSlug(body.menuId) || "main";
+    const menuName = normalizeName(body.menuName) || "Menu";
     const name = normalizeName(body.name);
     const nameI18n = {
       uz: normalizeName(body.nameI18n?.uz ?? name),
@@ -43,6 +47,8 @@ export async function POST(request: NextRequest) {
 
     const nextOrder = establishment.categories.length;
     establishment.categories.push({
+      menuId,
+      menuName,
       name,
       nameI18n,
       description,

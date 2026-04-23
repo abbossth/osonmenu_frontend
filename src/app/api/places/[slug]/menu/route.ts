@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyUserId, normalizeSlug } from "@/app/api/_utils/menu-builder";
+import { getDefaultCategoryImage } from "@/lib/category-default-image";
 import { connectToMongoDB } from "@/lib/mongodb";
 import { EstablishmentModel } from "@/models/Establishment";
 
@@ -46,13 +47,18 @@ function normalizeCategories(categories: unknown) {
 
       return {
         _id: String(category._id ?? `category-${categoryIndex}`),
+        menuId: typeof category.menuId === "string" && category.menuId.trim() ? category.menuId.trim() : "main",
+        menuName: typeof category.menuName === "string" && category.menuName.trim() ? category.menuName.trim() : "Menu",
         name: typeof category.name === "string" ? category.name : "Untitled",
         nameI18n: normalizeI18n(
           category.nameI18n,
           typeof category.name === "string" ? category.name : "Untitled",
         ),
         description: typeof category.description === "string" ? category.description : "",
-        imageUrl: typeof category.imageUrl === "string" ? category.imageUrl : "",
+        imageUrl:
+          typeof category.imageUrl === "string" && category.imageUrl.trim()
+            ? category.imageUrl.trim()
+            : getDefaultCategoryImage(typeof category.name === "string" ? category.name : "menu"),
         isVisible: typeof category.isVisible === "boolean" ? category.isVisible : true,
         order: normalizeOrder(category.order, categoryIndex),
         items,
@@ -60,6 +66,40 @@ function normalizeCategories(categories: unknown) {
     })
     .sort((a, b) => a.order - b.order)
     .map((category, index) => ({ ...category, order: index }));
+}
+
+function buildMenus(
+  categories: ReturnType<typeof normalizeCategories>,
+  persistedMenus: Array<{ id: string; name: string; order?: number; isVisible?: boolean }> = [],
+): Array<{ id: string; name: string; order: number; isVisible: boolean; categories: ReturnType<typeof normalizeCategories> }> {
+  const menuMap = new Map<
+    string,
+    { id: string; name: string; order: number; isVisible: boolean; categories: ReturnType<typeof normalizeCategories> }
+  >();
+  for (const menu of persistedMenus) {
+    if (!menu?.id) continue;
+    menuMap.set(menu.id, {
+      id: menu.id,
+      name: menu.name || "Menu",
+      order: typeof menu.order === "number" ? menu.order : menuMap.size,
+      isVisible: typeof menu.isVisible === "boolean" ? menu.isVisible : true,
+      categories: [],
+    });
+  }
+  for (const category of categories) {
+    const menuId = category.menuId || "main";
+    if (!menuMap.has(menuId)) {
+      menuMap.set(menuId, {
+        id: menuId,
+        name: category.menuName || "Menu",
+        order: menuMap.size,
+        isVisible: true,
+        categories: [],
+      });
+    }
+    menuMap.get(menuId)?.categories.push(category);
+  }
+  return Array.from(menuMap.values()).sort((a, b) => a.order - b.order);
 }
 
 export async function GET(request: NextRequest, { params }: Params) {
@@ -84,6 +124,17 @@ export async function GET(request: NextRequest, { params }: Params) {
     const ownerId = establishment.ownerId || establishment.userId;
     const isOwner = Boolean(userId && ownerId === userId);
     const categories = normalizeCategories(establishment.categories);
+    const menus = buildMenus(
+      categories,
+      Array.isArray(establishment.menus)
+        ? establishment.menus.map((menu: { id: string; name: string; order?: number; isVisible?: boolean }) => ({
+            id: menu.id,
+            name: menu.name,
+            order: menu.order,
+            isVisible: menu.isVisible,
+          }))
+        : [],
+    );
 
     return NextResponse.json({
       place: {
@@ -116,6 +167,7 @@ export async function GET(request: NextRequest, { params }: Params) {
             : "Here you can add any additional information about your QR code menu",
         currency: establishment.currency,
         language: establishment.language,
+        menus,
         categories,
       },
       isOwner,

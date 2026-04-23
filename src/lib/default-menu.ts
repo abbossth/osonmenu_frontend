@@ -142,7 +142,10 @@ function translate(value: LocalizedText, language: Language) {
 }
 
 export function buildDefaultMenu(language: Language) {
+  const defaultMenuName = translate({ uz: "Menu", ru: "Меню", en: "Menu" }, language);
   return DEFAULT_MENU.map((category, categoryIndex) => ({
+    menuId: "main",
+    menuName: defaultMenuName,
     name: translate(category.name, language),
     order: categoryIndex,
     items: category.items.map((item, itemIndex) => ({

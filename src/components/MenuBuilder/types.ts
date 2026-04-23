@@ -19,6 +19,8 @@ export type MenuItem = {
 
 export type MenuCategory = {
   _id: string;
+  menuId: string;
+  menuName: string;
   name: string;
   nameI18n: MenuLocalizedText;
   description: string;
@@ -26,6 +28,14 @@ export type MenuCategory = {
   isVisible: boolean;
   order: number;
   items: MenuItem[];
+};
+
+export type MenuGroup = {
+  id: string;
+  name: string;
+  order?: number;
+  isVisible?: boolean;
+  categories: MenuCategory[];
 };
 
 export type MenuPlace = {
@@ -55,6 +65,7 @@ export type MenuPlace = {
   additionalInfo: string;
   currency: "UZS" | "USD";
   language: "uz" | "ru" | "en";
+  menus: MenuGroup[];
   categories: MenuCategory[];
 };
 

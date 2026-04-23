@@ -11,6 +11,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const { id } = await params;
     const body = (await request.json()) as {
       slug?: string;
+      menuId?: string;
+      menuName?: string;
       name?: string;
       nameI18n?: { uz?: string; ru?: string; en?: string };
       description?: string;
@@ -18,6 +20,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       isVisible?: boolean;
     };
     const slug = normalizeSlug(body.slug);
+    const menuId = normalizeSlug(body.menuId) || "main";
+    const menuName = normalizeName(body.menuName) || "Menu";
     const name = normalizeName(body.name);
     const nameI18n = {
       uz: normalizeName(body.nameI18n?.uz ?? name),
@@ -41,6 +45,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const category = establishment.categories.id(categoryObjectId);
     if (!category) return NextResponse.json({ error: "Category not found" }, { status: 404 });
     category.name = name;
+    category.menuId = menuId;
+    category.menuName = menuName;
     category.nameI18n = nameI18n;
     category.description = description;
     category.imageUrl = imageUrl;

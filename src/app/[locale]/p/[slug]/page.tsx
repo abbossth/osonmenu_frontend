@@ -4,8 +4,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { AddItemModal } from "@/components/MenuBuilder/AddItemModal";
+import { CategoryList } from "@/components/MenuUI/CategoryList";
+import { MenuTabs } from "@/components/MenuUI/MenuTabs";
 import { useAuth } from "@/components/providers/auth-provider";
-import type { MenuCategory, MenuItem, MenuLocalizedText, MenuPlace } from "@/components/MenuBuilder/types";
+import { getDefaultCategoryImage } from "@/lib/category-default-image";
+import type { MenuCategory, MenuGroup, MenuItem, MenuLocalizedText, MenuPlace } from "@/components/MenuBuilder/types";
 
 type MenuResponse = { place: MenuPlace; isOwner?: boolean };
 type CategoryFormState = {
@@ -39,11 +42,40 @@ type EstablishmentFormState = {
   googleReviews: string;
   additionalInfo: string;
 };
+type MenuFormState = {
+  name: string;
+  isVisible: boolean;
+  insertSide: "left" | "right";
+};
 
 function sortCategories(categories: MenuCategory[]) {
   return [...categories]
     .sort((a, b) => a.order - b.order)
     .map((category) => ({ ...category, items: [...category.items].sort((a, b) => a.order - b.order) }));
+}
+
+function buildMenus(categories: MenuCategory[], fallbackMenus: MenuGroup[] = []) {
+  const grouped = new Map<string, MenuGroup>();
+
+  for (const category of categories) {
+    const menuId = category.menuId || "main";
+    if (!grouped.has(menuId)) {
+      grouped.set(menuId, {
+        id: menuId,
+        name: category.menuName || fallbackMenus.find((menu) => menu.id === menuId)?.name || "Menu",
+        categories: [],
+      });
+    }
+    grouped.get(menuId)?.categories.push(category);
+  }
+
+  for (const menu of fallbackMenus) {
+    if (!grouped.has(menu.id)) {
+      grouped.set(menu.id, { ...menu, categories: [] });
+    }
+  }
+
+  return Array.from(grouped.values());
 }
 
 export default function PublicMenuPage() {
@@ -55,13 +87,17 @@ export default function PublicMenuPage() {
   const slug = typeof params.slug === "string" ? params.slug : "";
   const locale = params.locale === "ru" || params.locale === "en" ? params.locale : "uz";
   const [place, setPlace] = useState<MenuPlace | null>(null);
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [itemModalOpen, setItemModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [editingItem] = useState<MenuItem | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [menuOrder, setMenuOrder] = useState<string[]>([]);
+  const [menuEditorOpen, setMenuEditorOpen] = useState(false);
+  const [menuForm, setMenuForm] = useState<MenuFormState>({ name: "", isVisible: true, insertSide: "right" });
   const [categoryEditorOpen, setCategoryEditorOpen] = useState(false);
   const [categoryToEdit, setCategoryToEdit] = useState<MenuCategory | null>(null);
   const [categoryToRemove, setCategoryToRemove] = useState<MenuCategory | null>(null);
@@ -101,21 +137,22 @@ export default function PublicMenuPage() {
   const tempItemIdRef = useRef(0);
 
   const categories = useMemo(() => (place ? sortCategories(place.categories) : []), [place]);
+  const menus = useMemo(() => buildMenus(categories, place?.menus ?? []), [categories, place]);
+  const orderedMenus = useMemo(() => {
+    if (!menuOrder.length) return menus;
+    const rank = new Map(menuOrder.map((id, index) => [id, index]));
+    return [...menus].sort((a, b) => (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER));
+  }, [menuOrder, menus]);
+  const resolvedActiveMenuId =
+    activeMenuId && orderedMenus.some((menu) => menu.id === activeMenuId) ? activeMenuId : orderedMenus[0]?.id ?? null;
+  const activeMenu = orderedMenus.find((menu) => menu.id === resolvedActiveMenuId) ?? null;
+  const activeMenuCategories = activeMenu?.categories ?? [];
   const resolvedActiveCategoryId =
-    activeCategoryId && categories.some((category) => category._id === activeCategoryId)
+    activeCategoryId && activeMenuCategories.some((category) => category._id === activeCategoryId)
       ? activeCategoryId
-      : categories[0]?._id ?? null;
-  const activeCategory = categories.find((category) => category._id === resolvedActiveCategoryId) ?? null;
+      : activeMenuCategories[0]?._id ?? null;
+  const activeCategory = activeMenuCategories.find((category) => category._id === resolvedActiveCategoryId) ?? null;
   const isAdminMode = Boolean(firebaseUser?.uid && place?.ownerId && firebaseUser.uid === place.ownerId);
-
-  const filteredItems = (() => {
-    if (!activeCategory) return [];
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return activeCategory.items;
-    return activeCategory.items.filter(
-      (item) => item.name.toLowerCase().includes(query) || item.description.toLowerCase().includes(query),
-    );
-  })();
 
   function pickLocalized(text: MenuLocalizedText | undefined, fallback: string) {
     if (!text) return fallback;
@@ -145,7 +182,10 @@ export default function PublicMenuPage() {
         }
         const data = (await res.json()) as MenuResponse;
         setPlace(data.place);
-        const firstCategoryId = data.place.categories.sort((a, b) => a.order - b.order)[0]?._id ?? null;
+        const firstMenu = data.place.menus?.[0] ?? null;
+        const firstCategoryId = firstMenu?.categories?.[0]?._id ?? null;
+        setMenuOrder((data.place.menus ?? []).map((menu) => menu.id));
+        setActiveMenuId(firstMenu?.id ?? null);
         setActiveCategoryId(firstCategoryId);
       } catch (loadError) {
         const message = loadError instanceof Error ? loadError.message : "";
@@ -177,13 +217,17 @@ export default function PublicMenuPage() {
 
   async function addCategory(payload: CategoryFormState) {
     if (!place || !isAdminMode) return;
+    const targetMenu = activeMenu;
+    if (!targetMenu) return;
     const previous = place;
     const optimistic: MenuCategory = {
       _id: `temp-category-${tempCategoryIdRef.current++}`,
+      menuId: targetMenu.id,
+      menuName: targetMenu.name,
       name: payload.name,
       nameI18n: payload.nameI18n,
       description: payload.description,
-      imageUrl: payload.imageUrl,
+      imageUrl: payload.imageUrl || getDefaultCategoryImage(payload.name),
       isVisible: payload.isVisible,
       order: place.categories.length,
       items: [],
@@ -192,7 +236,7 @@ export default function PublicMenuPage() {
     try {
       const res = await authorizedFetch("/api/categories", {
         method: "POST",
-        body: JSON.stringify({ slug: place.slug, ...payload }),
+        body: JSON.stringify({ slug: place.slug, menuId: targetMenu.id, menuName: targetMenu.name, ...payload }),
       });
       const data = (await res.json()) as { category: MenuCategory };
       setPlace((current) =>
@@ -204,9 +248,37 @@ export default function PublicMenuPage() {
           : current,
       );
       setActiveCategoryId(data.category._id);
+      setActiveMenuId(targetMenu.id);
     } catch {
       setPlace(previous);
       setError(t("errors.categoryCreate"));
+    }
+  }
+
+  async function createMenu(name: string, insertSide: "left" | "right", isVisible: boolean) {
+    if (!place || !isAdminMode) return;
+    try {
+      const res = await authorizedFetch("/api/menus", {
+        method: "POST",
+        body: JSON.stringify({ slug: place.slug, name, isVisible, insertSide }),
+      });
+      const data = (await res.json()) as { menu: { id: string; name: string; order: number; isVisible: boolean } };
+      setPlace((current) =>
+        current
+          ? {
+              ...current,
+              menus: [...(current.menus ?? []), { ...data.menu, categories: [] }],
+            }
+          : current,
+      );
+      setMenuOrder((current) => {
+        const base = current.length ? [...current] : orderedMenus.map((menu) => menu.id);
+        return insertSide === "left" ? [data.menu.id, ...base] : [...base, data.menu.id];
+      });
+      setActiveMenuId(data.menu.id);
+      setActiveCategoryId(null);
+    } catch (menuError) {
+      setError(menuError instanceof Error ? menuError.message : "Failed to create menu");
     }
   }
 
@@ -220,7 +292,12 @@ export default function PublicMenuPage() {
     try {
       await authorizedFetch(`/api/categories/${categoryId}`, {
         method: "PATCH",
-        body: JSON.stringify({ slug: place.slug, ...payload }),
+        body: JSON.stringify({
+          slug: place.slug,
+          menuId: activeCategory?.menuId ?? activeMenu?.id ?? "main",
+          menuName: activeCategory?.menuName ?? activeMenu?.name ?? "Menu",
+          ...payload,
+        }),
       });
     } catch {
       setPlace(previous);
@@ -253,6 +330,18 @@ export default function PublicMenuPage() {
     setCategoryEditorOpen(true);
   }
 
+  function openCreateMenuModal(position: "left" | "right") {
+    setMenuForm({ name: "", isVisible: true, insertSide: position });
+    setMenuEditorOpen(true);
+  }
+
+  function submitCreateMenuModal() {
+    const menuName = menuForm.name.trim();
+    if (!menuName) return;
+    void createMenu(menuName, menuForm.insertSide, menuForm.isVisible);
+    setMenuEditorOpen(false);
+  }
+
   function openEditCategoryModal(category: MenuCategory) {
     setCategoryToEdit(category);
     setCategoryForm({
@@ -282,11 +371,7 @@ export default function PublicMenuPage() {
     if (categoryToEdit) {
       await updateCategory(categoryToEdit._id, payload);
     } else {
-      await addCategory({
-        ...payload,
-        description: "",
-        imageUrl: "",
-      });
+      await addCategory(payload);
     }
     setCategoryEditorOpen(false);
   }
@@ -304,7 +389,7 @@ export default function PublicMenuPage() {
     try {
       await authorizedFetch("/api/categories/reorder", {
         method: "PATCH",
-        body: JSON.stringify({ slug: place.slug, categoryIds }),
+        body: JSON.stringify({ slug: place.slug, menuId: activeMenu?.id ?? "main", categoryIds }),
       });
     } catch {
       setPlace(previous);
@@ -314,7 +399,7 @@ export default function PublicMenuPage() {
 
   async function moveCategory(categoryId: string, direction: "left" | "right") {
     if (!isAdminMode) return;
-    const ids = categories.map((category) => category._id);
+    const ids = activeMenuCategories.map((category) => category._id);
     const currentIndex = ids.indexOf(categoryId);
     if (currentIndex === -1) return;
     const targetIndex = direction === "left" ? currentIndex - 1 : currentIndex + 1;
@@ -401,53 +486,6 @@ export default function PublicMenuPage() {
     }
   }
 
-  async function deleteItem(itemId: string) {
-    if (!place || !activeCategory || !isAdminMode) return;
-    const confirmed = window.confirm(t("confirmDeleteItem"));
-    if (!confirmed) return;
-    const previous = place;
-    setPlace({
-      ...place,
-      categories: place.categories.map((category) =>
-        category._id === activeCategory._id ? { ...category, items: category.items.filter((item) => item._id !== itemId) } : category,
-      ),
-    });
-    try {
-      await authorizedFetch(`/api/items/${itemId}?slug=${place.slug}`, { method: "DELETE" });
-    } catch {
-      setPlace(previous);
-      setError(t("errors.itemDelete"));
-    }
-  }
-
-  async function reorderItems(itemIds: string[]) {
-    if (!place || !activeCategory || !isAdminMode) return;
-    const previous = place;
-    const rank = new Map(itemIds.map((id, index) => [id, index]));
-    setPlace({
-      ...place,
-      categories: place.categories.map((category) =>
-        category._id === activeCategory._id
-          ? {
-              ...category,
-              items: category.items
-                .map((item) => ({ ...item, order: rank.get(item._id) ?? item.order }))
-                .sort((a, b) => a.order - b.order),
-            }
-          : category,
-      ),
-    });
-    try {
-      await authorizedFetch("/api/items/reorder", {
-        method: "PATCH",
-        body: JSON.stringify({ slug: place.slug, categoryId: activeCategory._id, itemIds }),
-      });
-    } catch {
-      setPlace(previous);
-      setError(t("errors.itemReorder"));
-    }
-  }
-
   function openEstablishmentEditor() {
     if (!place) return;
     setEstablishmentForm({
@@ -495,26 +533,97 @@ export default function PublicMenuPage() {
     }
   }
 
-  async function moveItem(itemId: string, direction: "up" | "down") {
-    if (!activeCategory || !isAdminMode) return;
-    const ids = activeCategory.items.map((item) => item._id);
-    const currentIndex = ids.indexOf(itemId);
-    if (currentIndex === -1) return;
-    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
-    if (targetIndex < 0 || targetIndex >= ids.length) return;
-    const next = [...ids];
-    const [moved] = next.splice(currentIndex, 1);
-    next.splice(targetIndex, 0, moved);
-    await reorderItems(next);
-  }
-
   function handleCategorySelect(categoryId: string) {
     setActiveCategoryId(categoryId);
     setSearchQuery("");
+    router.push(`/${locale}/p/${slug}/${categoryId}`);
+  }
+
+  function handleMenuSelect(menuId: string) {
+    setActiveMenuId(menuId);
+    const nextCategoryId = orderedMenus.find((menu) => menu.id === menuId)?.categories[0]?._id ?? null;
+    setActiveCategoryId(nextCategoryId);
+    setSearchQuery("");
+  }
+
+  function moveMenu(menuId: string, direction: "left" | "right") {
+    if (!place || !isAdminMode) return;
+    const source = menuOrder.length ? [...menuOrder] : orderedMenus.map((menu) => menu.id);
+    const index = source.indexOf(menuId);
+    if (index < 0) return;
+    const target = direction === "left" ? index - 1 : index + 1;
+    if (target < 0 || target >= source.length) return;
+    const next = [...source];
+    const [item] = next.splice(index, 1);
+    next.splice(target, 0, item);
+    setMenuOrder(next);
+    void authorizedFetch("/api/menus/reorder", {
+      method: "PATCH",
+      body: JSON.stringify({ slug: place.slug, menuIds: next }),
+    }).catch(() => {
+      setMenuOrder(source);
+      setError("Failed to reorder menu");
+    });
+  }
+
+  async function editMenu(menuId: string) {
+    if (!place || !isAdminMode) return;
+    const menu = orderedMenus.find((entry) => entry.id === menuId);
+    if (!menu) return;
+    const nextName = window.prompt("Menu name", menu.name)?.trim();
+    if (!nextName || nextName === menu.name) return;
+    try {
+      await authorizedFetch(`/api/menus/${menuId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ slug: place.slug, name: nextName, isVisible: true }),
+      });
+      setPlace((current) =>
+        current
+          ? {
+              ...current,
+              menus: (current.menus ?? []).map((entry) => (entry.id === menuId ? { ...entry, name: nextName } : entry)),
+              categories: current.categories.map((category) =>
+                category.menuId === menuId ? { ...category, menuName: nextName } : category,
+              ),
+            }
+          : current,
+      );
+    } catch {
+      setError("Failed to rename menu");
+    }
+  }
+
+  async function deleteMenu(menuId: string) {
+    if (!place || !isAdminMode) return;
+    const menu = orderedMenus.find((entry) => entry.id === menuId);
+    if (!menu) return;
+    const confirmed = window.confirm(`Delete menu "${menu.name}" and all its categories?`);
+    if (!confirmed) return;
+    try {
+      await authorizedFetch(`/api/menus/${menuId}?slug=${place.slug}`, { method: "DELETE" });
+      setPlace((current) =>
+        current
+          ? {
+              ...current,
+              menus: (current.menus ?? []).filter((entry) => entry.id !== menuId),
+              categories: current.categories.filter((category) => category.menuId !== menuId),
+            }
+          : current,
+      );
+      const nextOrder = (menuOrder.length ? menuOrder : orderedMenus.map((entry) => entry.id)).filter((id) => id !== menuId);
+      setMenuOrder(nextOrder);
+      if (activeMenuId === menuId) {
+        const fallback = orderedMenus.find((entry) => entry.id !== menuId)?.id ?? null;
+        setActiveMenuId(fallback);
+        setActiveCategoryId(orderedMenus.find((entry) => entry.id === fallback)?.categories[0]?._id ?? null);
+      }
+    } catch {
+      setError("Failed to delete menu");
+    }
   }
 
   return (
-    <div className="min-h-screen bg-neutral-100 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
+    <div className="min-h-screen bg-[#0f0f0f] text-neutral-100">
       {error ? (
         <div className="mx-auto mb-2 max-w-[620px] rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
           {error}
@@ -522,15 +631,15 @@ export default function PublicMenuPage() {
       ) : null}
 
       {pageLoading ? (
-        <div className="mx-auto max-w-[620px] rounded-[28px] border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-          <div className="h-40 animate-pulse rounded-2xl bg-neutral-100 dark:bg-neutral-800" />
-          <div className="mt-5 h-8 w-48 animate-pulse rounded-lg bg-neutral-100 dark:bg-neutral-800" />
-          <div className="mt-3 h-5 w-72 animate-pulse rounded-lg bg-neutral-100 dark:bg-neutral-800" />
-          <div className="mt-6 h-12 animate-pulse rounded-full bg-neutral-100 dark:bg-neutral-800" />
-          <div className="mt-4 h-28 animate-pulse rounded-2xl bg-neutral-100 dark:bg-neutral-800" />
+        <div className="mx-auto max-w-[620px] rounded-[28px] border border-white/10 bg-[#121212] p-6 shadow-sm">
+          <div className="h-40 animate-pulse rounded-2xl bg-neutral-800" />
+          <div className="mt-5 h-8 w-48 animate-pulse rounded-lg bg-neutral-800" />
+          <div className="mt-3 h-5 w-72 animate-pulse rounded-lg bg-neutral-800" />
+          <div className="mt-6 h-12 animate-pulse rounded-full bg-neutral-800" />
+          <div className="mt-4 h-28 animate-pulse rounded-2xl bg-neutral-800" />
         </div>
       ) : (
-        <div className="mx-auto max-w-[620px] overflow-hidden rounded-[28px] border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="mx-auto max-w-[620px] overflow-hidden rounded-[28px] border border-white/10 bg-[#121212] shadow-sm">
           <div className="relative h-44 bg-[radial-gradient(circle_at_20%_20%,#b34b5f,transparent_45%),radial-gradient(circle_at_80%_30%,#e08a9b,transparent_50%),radial-gradient(circle_at_50%_80%,#945666,transparent_40%),linear-gradient(135deg,#6f3243,#bd6778)]">
             {isAdminMode ? (
               <button
@@ -543,90 +652,49 @@ export default function PublicMenuPage() {
             ) : null}
           </div>
 
-          <div className="-mt-4 rounded-t-[28px] bg-white p-4 dark:bg-neutral-900 sm:p-5">
+          <div className="-mt-4 rounded-t-[28px] bg-[#121212] p-4 sm:p-5">
             <div className="flex items-center gap-2">
-              <h1 className="text-5xl font-semibold text-neutral-900 dark:text-white">{place?.name ?? "ABBOS"}</h1>
+              <h1 className="text-5xl font-semibold text-white">{place?.name ?? "ABBOS"}</h1>
               {isAdminMode ? (
                 <button
                   type="button"
                   onClick={openEstablishmentEditor}
-                  className="text-neutral-500 transition hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
+                  className="text-neutral-500 transition hover:text-neutral-200"
                 >
                   ✎
                 </button>
               ) : null}
             </div>
-            <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+            <p className="mt-2 text-sm text-neutral-400">
               ◉ {place?.city || "Awesome City"}, {place?.country || "The Best Country"}   〰 {place?.wifiPassword || "CoolWiFiPassword"}
             </p>
-            <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
+            <p className="mt-2 text-sm text-neutral-300">
               {place?.additionalInfo || "Here you can add any additional information about your QR code menu"}
             </p>
 
-            <div className="mt-3 flex flex-wrap items-start gap-1.5">
-              {isAdminMode ? (
-                <button
-                  type="button"
-                  onClick={openCreateCategoryModal}
-                  className="h-7 w-7 rounded-full bg-orange-400 text-lg font-medium leading-none text-white shadow-sm"
-                >
-                  +
-                </button>
-              ) : null}
-              {categories.map((category) => (
-                <div key={category._id} className="space-y-1">
-                  <button
-                    type="button"
-                    onClick={() => handleCategorySelect(category._id)}
-                    className={`rounded-full border px-4 py-1.5 text-2xl font-semibold leading-none transition ${
-                      resolvedActiveCategoryId === category._id
-                        ? "border-orange-400 bg-orange-400 text-white"
-                        : "border-orange-300 bg-white text-orange-400 hover:bg-orange-50 dark:border-orange-500/50 dark:bg-transparent dark:hover:bg-orange-500/10"
-                    }`}
-                  >
-                    {pickLocalized(category.nameI18n, category.name)}
-                  </button>
-                  {isAdminMode ? (
-                    <div className="flex items-center justify-center gap-1 rounded-xl bg-orange-300 px-2.5 py-1 text-white shadow-sm">
-                      <button type="button" onClick={() => void moveCategory(category._id, "left")} className="text-xs">
-                        ↩
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => openEditCategoryModal(category)}
-                        className="text-xs"
-                      >
-                        ✎
-                      </button>
-                      <button type="button" onClick={() => void moveCategory(category._id, "right")} className="text-xs">
-                        ↪
-                      </button>
-                      <button type="button" onClick={() => setCategoryToRemove(category)} className="text-xs">
-                        🗑
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
-              ))}
-              {isAdminMode ? (
-                <button
-                  type="button"
-                  onClick={openCreateCategoryModal}
-                  className="h-7 w-7 rounded-full bg-orange-400 text-lg font-medium leading-none text-white shadow-sm"
-                >
-                  +
-                </button>
-              ) : null}
+            <div className="mt-3">
+              <MenuTabs
+                menus={orderedMenus.map((menu) => ({ id: menu.id, name: menu.name }))}
+                activeMenuId={resolvedActiveMenuId}
+                isAdmin={isAdminMode}
+                onMoveLeft={(menuId) => moveMenu(menuId, "left")}
+                onMoveRight={(menuId) => moveMenu(menuId, "right")}
+                onEdit={(menuId) => void editMenu(menuId)}
+                onDelete={(menuId) => void deleteMenu(menuId)}
+                onAddLeft={() => openCreateMenuModal("left")}
+                onAddRight={() => openCreateMenuModal("right")}
+                onSelect={handleMenuSelect}
+              />
             </div>
 
-            <div className="mt-4 flex items-center rounded-full bg-neutral-100 px-4 py-2.5 dark:bg-neutral-800">
+            <div className="mt-4 flex items-center rounded-full bg-white/5 px-4 py-2.5">
               <input
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search"
-                className="w-full bg-transparent text-base text-neutral-700 outline-none dark:text-neutral-200"
+                className="w-full bg-transparent text-base text-neutral-200 outline-none"
               />
-              <span className="grid h-8 w-8 place-items-center rounded-full border border-neutral-300 bg-white text-lg text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900">
+              <span className="grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-black/40 text-lg text-neutral-400">
                 ⌕
               </span>
             </div>
@@ -644,101 +712,29 @@ export default function PublicMenuPage() {
               </div>
             ) : null}
 
-            <div className={`mt-4 space-y-4 ${isAdminMode ? "pb-20" : "pb-4"}`}>
-              {activeCategory ? (
-                <h3 className="text-xl font-semibold text-neutral-800 dark:text-neutral-100">
-                  {pickLocalized(activeCategory.nameI18n, activeCategory.name)}
-                </h3>
-              ) : null}
+            <div className={`mt-4 space-y-5 ${isAdminMode ? "pb-20" : "pb-4"}`}>
+              <CategoryList
+                categories={activeMenuCategories.map((category) => ({
+                  id: category._id,
+                  name: pickLocalized(category.nameI18n, category.name),
+                  imageUrl: category.imageUrl,
+                }))}
+                activeCategoryId={resolvedActiveCategoryId}
+                isAdmin={isAdminMode}
+                onMoveUp={(categoryId) => void moveCategory(categoryId, "left")}
+                onMoveDown={(categoryId) => void moveCategory(categoryId, "right")}
+                onEdit={(categoryId) => {
+                  const category = activeMenuCategories.find((entry) => entry._id === categoryId);
+                  if (category) openEditCategoryModal(category);
+                }}
+                onDelete={(categoryId) => {
+                  const category = activeMenuCategories.find((entry) => entry._id === categoryId);
+                  if (category) setCategoryToRemove(category);
+                }}
+                onAddUnder={() => openCreateCategoryModal()}
+                onSelect={handleCategorySelect}
+              />
 
-              {!activeCategory ? (
-                <div className="w-full rounded-2xl border border-dashed border-neutral-300 p-8 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
-                  {t("items.noCategory")}
-                </div>
-              ) : filteredItems.length === 0 ? (
-                isAdminMode ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingItem(null);
-                      setItemModalOpen(true);
-                    }}
-                    className="w-full rounded-2xl border border-dashed border-neutral-300 p-8 text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400"
-                  >
-                    {t("items.empty")}
-                  </button>
-                ) : (
-                  <div className="w-full rounded-2xl border border-dashed border-neutral-300 p-8 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
-                    {t("items.empty")}
-                  </div>
-                )
-              ) : (
-                filteredItems.map((item, index) => (
-                  <div key={item._id} className="space-y-3">
-                    {isAdminMode && index === 0 ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingItem(null);
-                          setItemModalOpen(true);
-                        }}
-                        className="inline-flex w-full items-center justify-center rounded-full bg-orange-300 py-1 text-2xl text-white transition hover:bg-orange-400"
-                      >
-                        +
-                      </button>
-                    ) : null}
-
-                    <article className="overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-700">
-                      <div className="relative">
-                        {item.imageUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={item.imageUrl} alt={item.name} className="h-48 w-full object-cover" />
-                        ) : (
-                          <div className="h-48 w-full bg-neutral-200 dark:bg-neutral-800" />
-                        )}
-                        {isAdminMode ? (
-                          <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-white/95 px-2 py-1 text-xs text-neutral-700 shadow">
-                            <button type="button" onClick={() => void moveItem(item._id, "up")}>
-                              ⇧
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setEditingItem(item);
-                                setItemModalOpen(true);
-                              }}
-                            >
-                              ✎
-                            </button>
-                            <button type="button" onClick={() => void deleteItem(item._id)}>
-                              🗑
-                            </button>
-                            <button type="button" onClick={() => void moveItem(item._id, "down")}>
-                              ⇩
-                            </button>
-                          </div>
-                        ) : null}
-                        <p className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-md bg-black/45 px-3 py-1 text-4xl font-semibold text-white">
-                          {pickLocalized(item.nameI18n, item.name)}
-                        </p>
-                      </div>
-                    </article>
-
-                    {isAdminMode ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingItem(null);
-                          setItemModalOpen(true);
-                        }}
-                        className="inline-flex w-full items-center justify-center rounded-full bg-orange-300 py-1 text-2xl text-white transition hover:bg-orange-400"
-                      >
-                        +
-                      </button>
-                    ) : null}
-                  </div>
-                ))
-              )}
             </div>
           </div>
 
@@ -765,16 +761,58 @@ export default function PublicMenuPage() {
         </div>
       )}
 
+      {isAdminMode && menuEditorOpen ? (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 p-4">
+          <div className="w-full max-w-[520px] rounded-3xl bg-white p-6 dark:bg-neutral-900">
+            <h3 className="text-2xl font-semibold text-neutral-900 dark:text-white">Create menu</h3>
+            <div className="mt-5 space-y-4">
+              <label className="block">
+                <span className="mb-1 block text-sm text-neutral-500 dark:text-neutral-400">Menu name *</span>
+                <input
+                  value={menuForm.name}
+                  onChange={(event) => setMenuForm((current) => ({ ...current, name: event.target.value }))}
+                  className="w-full rounded-xl bg-neutral-100 px-3 py-2.5 text-sm text-neutral-800 outline-none dark:bg-neutral-800 dark:text-neutral-100"
+                />
+              </label>
+              <label className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300">
+                <input
+                  type="checkbox"
+                  checked={menuForm.isVisible}
+                  onChange={(event) => setMenuForm((current) => ({ ...current, isVisible: event.target.checked }))}
+                />
+                Menu is visible
+              </label>
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setMenuEditorOpen(false)}
+                className="rounded-xl bg-orange-100 px-5 py-2 font-semibold text-orange-500"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={submitCreateMenuModal}
+                className="rounded-xl bg-orange-400 px-5 py-2 font-semibold text-white"
+              >
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {isAdminMode && categoryEditorOpen ? (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 p-4">
           <div className="w-full max-w-[520px] rounded-3xl bg-white p-6 dark:bg-neutral-900">
             <h3 className="text-2xl font-semibold text-neutral-900 dark:text-white">
-              {categoryToEdit ? "Edit section" : "Create menu"}
+              {categoryToEdit ? "Edit category" : "Create category"}
             </h3>
             <div className="mt-5 space-y-4">
               <label className="block">
                 <span className="mb-1 block text-sm text-neutral-500 dark:text-neutral-400">
-                  {categoryToEdit ? "Section name*" : "Menu name*"}
+                  Category name*
                 </span>
                 <input
                   value={categoryForm.name}
@@ -808,35 +846,31 @@ export default function PublicMenuPage() {
                   className="w-full rounded-xl bg-neutral-100 px-3 py-2.5 text-sm text-neutral-800 outline-none dark:bg-neutral-800 dark:text-neutral-100"
                 />
               </div>
-              {categoryToEdit ? (
-                <label className="block">
-                  <span className="mb-1 block text-sm text-neutral-500 dark:text-neutral-400">Section description</span>
-                  <textarea
-                    value={categoryForm.description}
-                    onChange={(event) => setCategoryForm((current) => ({ ...current, description: event.target.value }))}
-                    className="h-28 w-full resize-none rounded-xl bg-neutral-100 px-3 py-2.5 text-sm text-neutral-800 outline-none dark:bg-neutral-800 dark:text-neutral-100"
-                  />
-                </label>
-              ) : null}
+              <label className="block">
+                <span className="mb-1 block text-sm text-neutral-500 dark:text-neutral-400">Description</span>
+                <textarea
+                  value={categoryForm.description}
+                  onChange={(event) => setCategoryForm((current) => ({ ...current, description: event.target.value }))}
+                  className="h-28 w-full resize-none rounded-xl bg-neutral-100 px-3 py-2.5 text-sm text-neutral-800 outline-none dark:bg-neutral-800 dark:text-neutral-100"
+                />
+              </label>
               <label className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300">
                 <input
                   type="checkbox"
                   checked={categoryForm.isVisible}
                   onChange={(event) => setCategoryForm((current) => ({ ...current, isVisible: event.target.checked }))}
                 />
-                {categoryToEdit ? "Section is visible" : "Menu is visible"}
+                Category is visible
               </label>
-              {categoryToEdit ? (
-                <label className="block">
-                  <span className="mb-1 block text-sm text-neutral-500 dark:text-neutral-400">Section background image</span>
-                  <input
-                    value={categoryForm.imageUrl}
-                    onChange={(event) => setCategoryForm((current) => ({ ...current, imageUrl: event.target.value }))}
-                    placeholder="https://..."
-                    className="w-full rounded-xl border border-dashed border-neutral-300 bg-transparent px-3 py-2.5 text-sm text-neutral-800 outline-none dark:border-neutral-700 dark:text-neutral-100"
-                  />
-                </label>
-              ) : null}
+              <label className="block">
+                <span className="mb-1 block text-sm text-neutral-500 dark:text-neutral-400">Category background image</span>
+                <input
+                  value={categoryForm.imageUrl}
+                  onChange={(event) => setCategoryForm((current) => ({ ...current, imageUrl: event.target.value }))}
+                  placeholder="https://..."
+                  className="w-full rounded-xl border border-dashed border-neutral-300 bg-transparent px-3 py-2.5 text-sm text-neutral-800 outline-none dark:border-neutral-700 dark:text-neutral-100"
+                />
+              </label>
             </div>
             <div className="mt-6 flex justify-end gap-3">
               <button
