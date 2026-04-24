@@ -142,7 +142,6 @@ export function ImageEditorModal({ open, imageUrl, aspect = 16 / 9, onClose, onS
             onZoomChange={setZoom}
             onRotationChange={setRotation}
             onCropComplete={onCropComplete}
-            cropStyle={{ border: "2px dashed #ff4d5a" }}
             showGrid={false}
           />
         </div>
