@@ -38,16 +38,16 @@ export function MenuTabs({
 }: MenuTabsProps) {
   return (
     <div
-      className={`sticky top-0 z-20 -mx-1 rounded-2xl px-1 py-2 backdrop-blur ${
+      className={`sticky top-0 z-20 -mx-1 rounded-2xl px-1 py-1.5 backdrop-blur ${
         isLight ? "bg-white/95" : "bg-[#0f0f0f]/95"
       }`}
     >
-      <div className="flex items-start gap-2 overflow-x-auto pb-1">
+      <div className="flex items-start gap-2 overflow-x-auto pb-0.5">
         {isAdmin ? (
           <button
             type="button"
             onClick={onAddLeft}
-            className="h-8 w-8 shrink-0 cursor-pointer self-start rounded-full text-sm font-semibold text-white"
+            className="h-8 w-8 shrink-0 cursor-pointer self-start rounded-full text-sm font-semibold text-white shadow-sm"
             style={{ backgroundColor: accentColor }}
           >
             +
@@ -96,7 +96,7 @@ export function MenuTabs({
           <button
             type="button"
             onClick={onAddRight}
-            className="h-8 w-8 shrink-0 cursor-pointer self-start rounded-full text-sm font-semibold text-white"
+            className="h-8 w-8 shrink-0 cursor-pointer self-start rounded-full text-sm font-semibold text-white shadow-sm"
             style={{ backgroundColor: accentColor }}
           >
             +

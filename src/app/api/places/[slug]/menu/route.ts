@@ -40,6 +40,11 @@ function normalizeCategories(categories: unknown) {
           price: typeof item.price === "number" && Number.isFinite(item.price) ? item.price : 0,
           imageUrl: typeof item.imageUrl === "string" ? item.imageUrl : "",
           badge: item.badge === "popular" || item.badge === "new" ? item.badge : null,
+          isVisible: typeof item.isVisible === "boolean" ? item.isVisible : true,
+          isAvailable: typeof item.isAvailable === "boolean" ? item.isAvailable : true,
+          addonIds: Array.isArray(item.addonIds)
+            ? item.addonIds.filter((entry): entry is string => typeof entry === "string")
+            : [],
           order: normalizeOrder(item.order, itemIndex),
         }))
         .sort((a, b) => a.order - b.order)
@@ -66,6 +71,58 @@ function normalizeCategories(categories: unknown) {
     })
     .sort((a, b) => a.order - b.order)
     .map((category, index) => ({ ...category, order: index }));
+}
+
+function normalizeAddons(addons: unknown) {
+  if (!Array.isArray(addons)) return [];
+  return addons
+    .filter((addon): addon is Record<string, unknown> => typeof addon === "object" && addon !== null)
+    .map((addon, addonIndex) => ({
+      id: typeof addon.id === "string" && addon.id.trim() ? addon.id.trim() : `addon-${addonIndex}`,
+      name: typeof addon.name === "string" ? addon.name : "Addon",
+      nameI18n: normalizeI18n(addon.nameI18n, typeof addon.name === "string" ? addon.name : "Addon"),
+      type: addon.type === "multiple" ? "multiple" : "single",
+      options: Array.isArray(addon.options)
+        ? addon.options
+            .filter((option): option is Record<string, unknown> => typeof option === "object" && option !== null)
+            .map((option, optionIndex) => ({
+              id:
+                typeof option.id === "string" && option.id.trim()
+                  ? option.id.trim()
+                  : `addon-${addonIndex}-option-${optionIndex}`,
+              name: typeof option.name === "string" ? option.name : "Option",
+              nameI18n: normalizeI18n(option.nameI18n, typeof option.name === "string" ? option.name : "Option"),
+              price: typeof option.price === "number" && Number.isFinite(option.price) ? option.price : 0,
+              order: normalizeOrder(option.order, optionIndex),
+            }))
+            .sort((a, b) => a.order - b.order)
+            .map((option, index) => ({ ...option, order: index }))
+        : [],
+      isVisible: typeof addon.isVisible === "boolean" ? addon.isVisible : true,
+      order: normalizeOrder(addon.order, addonIndex),
+    }))
+    .sort((a, b) => a.order - b.order)
+    .map((addon, index) => ({ ...addon, order: index }));
+}
+
+function normalizeScheduledPrices(scheduledPrices: unknown) {
+  if (!Array.isArray(scheduledPrices)) return [];
+  return scheduledPrices
+    .filter((entry): entry is Record<string, unknown> => typeof entry === "object" && entry !== null)
+    .map((entry, index) => ({
+      id: typeof entry.id === "string" && entry.id.trim() ? entry.id.trim() : `scheduled-${index}`,
+      targetType: entry.targetType === "addon" ? "addon" : "item",
+      targetId: typeof entry.targetId === "string" ? entry.targetId : "",
+      targetName: typeof entry.targetName === "string" ? entry.targetName : "Item",
+      price: typeof entry.price === "number" && Number.isFinite(entry.price) ? entry.price : 0,
+      startAt:
+        entry.startAt instanceof Date
+          ? entry.startAt.toISOString()
+          : typeof entry.startAt === "string"
+            ? entry.startAt
+            : new Date().toISOString(),
+      enabled: typeof entry.enabled === "boolean" ? entry.enabled : true,
+    }));
 }
 
 function buildMenus(
@@ -135,6 +192,13 @@ export async function GET(request: NextRequest, { params }: Params) {
           }))
         : [],
     );
+    const addons = normalizeAddons(establishment.addons);
+    const scheduledPrices = normalizeScheduledPrices(establishment.scheduledPrices);
+    const enabledLanguages = Array.isArray(establishment.enabledLanguages)
+      ? establishment.enabledLanguages.filter((entry: unknown): entry is "uz" | "ru" | "en" =>
+          entry === "uz" || entry === "ru" || entry === "en",
+        )
+      : ["uz", "ru", "en"];
 
     return NextResponse.json({
       place: {
@@ -167,8 +231,11 @@ export async function GET(request: NextRequest, { params }: Params) {
             : "",
         currency: establishment.currency,
         language: establishment.language,
+        enabledLanguages,
         menus,
         categories,
+        addons,
+        scheduledPrices,
       },
       isOwner,
     });

@@ -2,10 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import imageCompression from "browser-image-compression";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import Image from "next/image";
-import { getFirebaseStorage } from "@/lib/firebase";
+import { uploadImageToFirebase } from "@/lib/firebase-upload";
+import { ImageEditorModal } from "@/components/MenuUI/ImageEditorModal";
 import type { MenuBadge, MenuItem, MenuLocalizedText } from "./types";
 
 type AddItemModalProps = {
@@ -27,12 +26,6 @@ type AddItemModalProps = {
     requiredName: string;
     requiredPrice: string;
     uploadImage: string;
-    nameUz: string;
-    nameRu: string;
-    nameEn: string;
-    descriptionUz: string;
-    descriptionRu: string;
-    descriptionEn: string;
   };
   onClose: () => void;
   onSave: (payload: {
@@ -47,17 +40,14 @@ type AddItemModalProps = {
 };
 
 export function AddItemModal({ open, item, labels, onClose, onSave }: AddItemModalProps) {
-  const [nameUz, setNameUz] = useState("");
-  const [nameRu, setNameRu] = useState("");
-  const [nameEn, setNameEn] = useState("");
-  const [descriptionUz, setDescriptionUz] = useState("");
-  const [descriptionRu, setDescriptionRu] = useState("");
-  const [descriptionEn, setDescriptionEn] = useState("");
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [badge, setBadge] = useState<MenuBadge>(null);
   const [imageUrl, setImageUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isEdit = Boolean(item);
@@ -66,12 +56,8 @@ export function AddItemModal({ open, item, labels, onClose, onSave }: AddItemMod
   useEffect(() => {
     if (!open) return;
     const frame = window.requestAnimationFrame(() => {
-      setNameUz(item?.nameI18n?.uz ?? item?.name ?? "");
-      setNameRu(item?.nameI18n?.ru ?? item?.name ?? "");
-      setNameEn(item?.nameI18n?.en ?? item?.name ?? "");
-      setDescriptionUz(item?.descriptionI18n?.uz ?? item?.description ?? "");
-      setDescriptionRu(item?.descriptionI18n?.ru ?? item?.description ?? "");
-      setDescriptionEn(item?.descriptionI18n?.en ?? item?.description ?? "");
+      setName(item?.name ?? "");
+      setDescription(item?.description ?? "");
       setPrice(item ? String(item.price) : "");
       setBadge(item?.badge ?? null);
       setImageUrl(item?.imageUrl ?? "");
@@ -88,18 +74,10 @@ export function AddItemModal({ open, item, labels, onClose, onSave }: AddItemMod
     if (!file) return;
     setUploading(true);
     try {
-      const compressedFile = await imageCompression(file, {
-        maxSizeMB: 0.7,
-        maxWidthOrHeight: 1600,
-        useWebWorker: true,
-      });
-      const storage = getFirebaseStorage();
-      const fileRef = ref(storage, `menu-items/${Date.now()}-${compressedFile.name}`);
-      await uploadBytes(fileRef, compressedFile);
-      const url = await getDownloadURL(fileRef);
+      const url = await uploadImageToFirebase(file, { folder: "menu-items", maxWidthOrHeight: 1600 });
       setImageUrl(url);
-    } catch {
-      setError(labels.uploadImage);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : labels.uploadImage);
     } finally {
       setUploading(false);
     }
@@ -108,18 +86,18 @@ export function AddItemModal({ open, item, labels, onClose, onSave }: AddItemMod
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    const trimmedName = name.trim();
+    const trimmedDescription = description.trim();
     const nameI18n = {
-      uz: nameUz.trim(),
-      ru: nameRu.trim(),
-      en: nameEn.trim(),
+      uz: trimmedName,
+      ru: trimmedName,
+      en: trimmedName,
     };
     const descriptionI18n = {
-      uz: descriptionUz.trim(),
-      ru: descriptionRu.trim(),
-      en: descriptionEn.trim(),
+      uz: trimmedDescription,
+      ru: trimmedDescription,
+      en: trimmedDescription,
     };
-    const trimmedName = nameI18n.uz || nameI18n.ru || nameI18n.en;
-    const trimmedDescription = descriptionI18n.uz || descriptionI18n.ru || descriptionI18n.en;
     const parsedPrice = Number(price);
     if (!trimmedName) {
       setError(labels.requiredName);
@@ -141,10 +119,21 @@ export function AddItemModal({ open, item, labels, onClose, onSave }: AddItemMod
         badge,
       });
       onClose();
-    } catch {
-      setError(labels.requiredName);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : labels.requiredName);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleSaveEditedImage(blob: Blob) {
+    const editedFile = new File([blob], `item-edited-${Date.now()}.jpg`, { type: "image/jpeg" });
+    setUploading(true);
+    try {
+      const url = await uploadImageToFirebase(editedFile, { folder: "menu-items", maxWidthOrHeight: 1600 });
+      setImageUrl(url);
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -164,35 +153,16 @@ export function AddItemModal({ open, item, labels, onClose, onSave }: AddItemMod
             exit={{ opacity: 0, y: 10, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 320, damping: 28 }}
             onClick={(event) => event.stopPropagation()}
-            className="w-full max-w-xl rounded-2xl border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
+            className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
           >
             <h3 className="text-xl font-semibold text-neutral-900 dark:text-white">{title}</h3>
             <form onSubmit={handleSubmit} className="mt-5 space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">{labels.nameUz}</label>
+                  <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">{labels.name}</label>
                   <input
-                    value={nameUz}
-                    onChange={(event) => setNameUz(event.target.value)}
-                    className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">{labels.nameRu}</label>
-                  <input
-                    value={nameRu}
-                    onChange={(event) => setNameRu(event.target.value)}
-                    className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">{labels.nameEn}</label>
-                  <input
-                    value={nameEn}
-                    onChange={(event) => setNameEn(event.target.value)}
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
                     className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
                   />
                 </div>
@@ -209,47 +179,66 @@ export function AddItemModal({ open, item, labels, onClose, onSave }: AddItemMod
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">{labels.descriptionUz}</label>
+                <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">{labels.description}</label>
                 <textarea
                   rows={3}
-                  value={descriptionUz}
-                  onChange={(event) => setDescriptionUz(event.target.value)}
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
                   className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
                 />
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">{labels.descriptionRu}</label>
-                  <textarea
-                    rows={3}
-                    value={descriptionRu}
-                    onChange={(event) => setDescriptionRu(event.target.value)}
-                    className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">{labels.descriptionEn}</label>
-                  <textarea
-                    rows={3}
-                    value={descriptionEn}
-                    onChange={(event) => setDescriptionEn(event.target.value)}
-                    className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
-                  />
-                </div>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">{labels.image}</label>
-                  <label className="flex h-28 cursor-pointer items-center justify-center rounded-xl border border-dashed border-neutral-300 bg-neutral-50 text-sm text-neutral-500 transition hover:border-orange-400 hover:text-orange-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-400">
-                    {uploading ? "Uploading..." : labels.uploadImage}
+                  <div className="space-y-2">
+                    <label className="relative flex h-40 cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-dashed border-neutral-300 bg-neutral-50 text-sm text-neutral-500 transition hover:border-orange-400 hover:text-orange-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-400">
+                      {preview ? (
+                        <>
+                          <Image src={preview} alt={name || "Item preview"} fill className="object-cover" unoptimized />
+                          <div className="absolute inset-0 bg-black/35" />
+                          <div className="absolute right-2 top-2 z-10 flex gap-2">
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setEditorOpen(true);
+                              }}
+                              className="rounded-md bg-black/70 px-2 py-1 text-xs font-medium text-white"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setImageUrl("");
+                              }}
+                              className="rounded-md bg-black/70 px-2 py-1 text-xs font-medium text-white"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <span>{uploading ? "Uploading..." : labels.uploadImage}</span>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(event) => void handleFileChange(event.target.files?.[0] ?? null)}
+                      />
+                    </label>
                     <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(event) => void handleFileChange(event.target.files?.[0] ?? null)}
+                      value={imageUrl}
+                      onChange={(event) => setImageUrl(event.target.value)}
+                      placeholder="Or paste image URL"
+                      className="w-full rounded-lg border border-neutral-200 bg-transparent px-3 py-2 text-xs text-neutral-500 outline-none transition focus:border-orange-400 dark:border-neutral-800 dark:text-neutral-400"
                     />
-                  </label>
+                  </div>
                 </div>
                 <div>
                   <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">{labels.badge}</label>
@@ -270,19 +259,6 @@ export function AddItemModal({ open, item, labels, onClose, onSave }: AddItemMod
                   </select>
                 </div>
               </div>
-
-              {preview ? (
-                <div className="overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
-                  <Image
-                    src={preview}
-                    alt={nameUz || nameRu || nameEn || "Item preview"}
-                    width={800}
-                    height={320}
-                    className="h-40 w-full object-cover"
-                    unoptimized
-                  />
-                </div>
-              ) : null}
 
               {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
 
@@ -306,6 +282,13 @@ export function AddItemModal({ open, item, labels, onClose, onSave }: AddItemMod
           </motion.div>
         </motion.div>
       ) : null}
+      <ImageEditorModal
+        open={editorOpen}
+        imageUrl={preview}
+        aspect={16 / 9}
+        onClose={() => setEditorOpen(false)}
+        onSave={handleSaveEditedImage}
+      />
     </AnimatePresence>
   );
 }

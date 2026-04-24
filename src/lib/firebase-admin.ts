@@ -1,5 +1,6 @@
 import { cert, getApps, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
+import { getStorage } from "firebase-admin/storage";
 
 function normalizeEnv(value?: string) {
   if (!value) return "";
@@ -36,4 +37,32 @@ export function getAdminAuth() {
     });
 
   return getAuth(adminApp);
+}
+
+export function getAdminStorageBucket() {
+  const projectId = normalizeEnv(process.env.FIREBASE_ADMIN_PROJECT_ID);
+  const clientEmail = normalizeEnv(process.env.FIREBASE_ADMIN_CLIENT_EMAIL);
+  const privateKey = normalizeEnv(process.env.FIREBASE_ADMIN_PRIVATE_KEY)
+    .replace(/\\n/g, "\n")
+    .replace(/\r\n/g, "\n");
+  const storageBucket = normalizeEnv(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET) || "oson-menu.firebasestorage.app";
+
+  if (!projectId || !clientEmail || !privateKey) {
+    throw new Error(
+      "Missing Firebase admin environment variables: FIREBASE_ADMIN_PROJECT_ID, FIREBASE_ADMIN_CLIENT_EMAIL, FIREBASE_ADMIN_PRIVATE_KEY.",
+    );
+  }
+
+  const adminApp =
+    getApps()[0] ??
+    initializeApp({
+      credential: cert({
+        projectId,
+        clientEmail,
+        privateKey,
+      }),
+      storageBucket,
+    });
+
+  return getStorage(adminApp).bucket(storageBucket);
 }

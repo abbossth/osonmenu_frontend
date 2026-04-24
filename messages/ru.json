@@ -481,6 +481,44 @@
         "itemNameRequired": "Название позиции обязательно.",
         "itemPriceRequired": "Цена обязательна."
       },
+      "components": {
+        "title": "Компоненты",
+        "sections": {
+          "addons": "Добавки",
+          "visibility": "Видимость позиций",
+          "locales": "Языки ресторана",
+          "scheduledPrices": "Запланированное обновление цен"
+        },
+        "actions": {
+          "add": "Добавить +",
+          "create": "Создать +",
+          "save": "Сохранить"
+        },
+        "addons": {
+          "namePlaceholder": "Название добавки",
+          "singleChoice": "Один на выбор",
+          "multipleChoice": "Несколько на выбор",
+          "options": "опции"
+        },
+        "visibility": {
+          "inStock": "В наличии",
+          "visible": "Видима"
+        },
+        "locales": {
+          "primary": "Основной",
+          "makePrimary": "Сделать основным"
+        },
+        "scheduled": {
+          "targetName": "Название",
+          "price": "Цена"
+        },
+        "bottomNav": {
+          "menu": "Меню",
+          "components": "Компоненты",
+          "qrCode": "QR код",
+          "more": "Еще"
+        }
+      },
       "confirmDeleteCategory": "Удалить эту категорию?",
       "confirmDeleteItem": "Удалить эту позицию?"
     }

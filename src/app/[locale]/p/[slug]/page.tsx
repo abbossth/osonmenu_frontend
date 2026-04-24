@@ -5,9 +5,12 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { AddItemModal } from "@/components/MenuBuilder/AddItemModal";
 import { CategoryList } from "@/components/MenuUI/CategoryList";
+import { BottomNav } from "@/components/MenuUI/BottomNav";
+import { ImageEditorModal } from "@/components/MenuUI/ImageEditorModal";
 import { MenuTabs } from "@/components/MenuUI/MenuTabs";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getDefaultCategoryImage } from "@/lib/category-default-image";
+import { uploadImageToFirebase } from "@/lib/firebase-upload";
 import type { MenuCategory, MenuGroup, MenuItem, MenuLocalizedText, MenuPlace } from "@/components/MenuBuilder/types";
 
 type MenuResponse = { place: MenuPlace; isOwner?: boolean };
@@ -47,6 +50,7 @@ type MenuFormState = {
   isVisible: boolean;
   insertSide: "left" | "right";
 };
+type ImageEditorTarget = "category" | "logo" | "background";
 
 function sortCategories(categories: MenuCategory[]) {
   return [...categories]
@@ -111,6 +115,15 @@ export default function PublicMenuPage() {
     isVisible: true,
   });
   const [establishmentEditorOpen, setEstablishmentEditorOpen] = useState(false);
+  const [imageUploadError, setImageUploadError] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingBackground, setUploadingBackground] = useState(false);
+  const [uploadingCategoryImage, setUploadingCategoryImage] = useState(false);
+  const [editorState, setEditorState] = useState<{ open: boolean; target: ImageEditorTarget | null; imageUrl: string }>({
+    open: false,
+    target: null,
+    imageUrl: "",
+  });
   const [establishmentForm, setEstablishmentForm] = useState<EstablishmentFormState>({
     name: "",
     colorTheme: "light",
@@ -137,6 +150,9 @@ export default function PublicMenuPage() {
   });
   const tempCategoryIdRef = useRef(0);
   const tempItemIdRef = useRef(0);
+  const logoInputRef = useRef<HTMLInputElement | null>(null);
+  const backgroundInputRef = useRef<HTMLInputElement | null>(null);
+  const categoryImageInputRef = useRef<HTMLInputElement | null>(null);
 
   const categories = useMemo(() => (place ? sortCategories(place.categories) : []), [place]);
   const menus = useMemo(() => buildMenus(categories, place?.menus ?? []), [categories, place]);
@@ -541,6 +557,62 @@ export default function PublicMenuPage() {
     }
   }
 
+  async function handleLogoUpload(file: File | null) {
+    if (!file) return;
+    setUploadingLogo(true);
+    setImageUploadError(null);
+    try {
+      const url = await uploadImageToFirebase(file, { folder: "establishment-logo", maxWidthOrHeight: 1200 });
+      setEstablishmentForm((current) => ({ ...current, logoUrl: url }));
+    } catch (error) {
+      setImageUploadError(error instanceof Error ? error.message : "Logo upload failed");
+    } finally {
+      setUploadingLogo(false);
+    }
+  }
+
+  async function handleBackgroundUpload(file: File | null) {
+    if (!file) return;
+    setUploadingBackground(true);
+    setImageUploadError(null);
+    try {
+      const url = await uploadImageToFirebase(file, { folder: "establishment-bg", maxWidthOrHeight: 2000 });
+      setEstablishmentForm((current) => ({ ...current, backgroundImage: url }));
+    } catch (error) {
+      setImageUploadError(error instanceof Error ? error.message : "Background upload failed");
+    } finally {
+      setUploadingBackground(false);
+    }
+  }
+
+  async function handleCategoryImageUpload(file: File | null) {
+    if (!file) return;
+    setUploadingCategoryImage(true);
+    setImageUploadError(null);
+    try {
+      const url = await uploadImageToFirebase(file, { folder: "category-bg", maxWidthOrHeight: 1800 });
+      setCategoryForm((current) => ({ ...current, imageUrl: url }));
+    } catch (error) {
+      setImageUploadError(error instanceof Error ? error.message : "Category image upload failed");
+    } finally {
+      setUploadingCategoryImage(false);
+    }
+  }
+
+  async function handleSaveEditedImage(blob: Blob) {
+    if (!editorState.target) return;
+    const editedFile = new File([blob], `edited-${editorState.target}-${Date.now()}.jpg`, { type: "image/jpeg" });
+    if (editorState.target === "logo") {
+      await handleLogoUpload(editedFile);
+      return;
+    }
+    if (editorState.target === "background") {
+      await handleBackgroundUpload(editedFile);
+      return;
+    }
+    await handleCategoryImageUpload(editedFile);
+  }
+
   function handleCategorySelect(categoryId: string) {
     setActiveCategoryId(categoryId);
     setSearchQuery("");
@@ -640,7 +712,7 @@ export default function PublicMenuPage() {
       ) : null}
 
       {pageLoading ? (
-        <div className={`mx-auto max-w-[620px] rounded-[28px] p-6 shadow-sm ${isLightTheme ? "border border-neutral-200 bg-white" : "border border-white/10 bg-[#121212]"}`}>
+        <div className={`mx-auto mt-2 max-w-[620px] rounded-[30px] p-6 shadow-sm ${isLightTheme ? "border border-neutral-200 bg-white" : "border border-white/10 bg-[#121212]"}`}>
           <div className="h-40 animate-pulse rounded-2xl bg-neutral-800" />
           <div className="mt-5 h-8 w-48 animate-pulse rounded-lg bg-neutral-800" />
           <div className="mt-3 h-5 w-72 animate-pulse rounded-lg bg-neutral-800" />
@@ -648,7 +720,7 @@ export default function PublicMenuPage() {
           <div className="mt-4 h-28 animate-pulse rounded-2xl bg-neutral-800" />
         </div>
       ) : (
-        <div className={`mx-auto max-w-[620px] overflow-hidden rounded-[28px] shadow-sm ${isLightTheme ? "border border-neutral-200 bg-white" : "border border-white/10 bg-[#121212]"}`}>
+        <div className={`mx-auto mt-2 max-w-[620px] overflow-hidden rounded-[30px] shadow-sm ${isLightTheme ? "border border-neutral-200 bg-white" : "border border-white/10 bg-[#121212]"}`}>
           <div
             className="relative h-44 overflow-hidden"
             style={
@@ -676,8 +748,8 @@ export default function PublicMenuPage() {
               </button>
             ) : null}
             {place?.logoUrl ? (
-              <div className="pointer-events-none absolute inset-0 grid place-items-center">
-                <div className="h-20 w-20 overflow-hidden rounded-full border-2 border-white/80 bg-white shadow-lg">
+            <div className="pointer-events-none absolute inset-0 grid place-items-center">
+                <div className="h-20 w-20 overflow-hidden rounded-full border-2 border-white/90 bg-white shadow-xl">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={place.logoUrl} alt={place.name} className="h-full w-full object-cover" />
                 </div>
@@ -685,9 +757,13 @@ export default function PublicMenuPage() {
             ) : null}
           </div>
 
-          <div className={`-mt-4 rounded-t-[28px] p-4 sm:p-5 ${isLightTheme ? "bg-white" : "bg-[#121212]"}`}>
-            <div className="flex items-center gap-2">
-              <h1 className={`text-5xl font-semibold ${isLightTheme ? "text-neutral-900" : "text-white"}`}>{place?.name ?? "ABBOS"}</h1>
+          <div
+            className={`mx-1 -mt-5 rounded-[26px] px-2 pt-8 sm:mx-2 sm:px-3 sm:pt-9 ${
+              isLightTheme ? "bg-white" : "bg-[#121212]"
+            }`}
+          >
+            <div className="mt-1 flex items-center gap-2">
+              <h1 className={`text-4xl font-semibold tracking-tight ${isLightTheme ? "text-neutral-900" : "text-white"}`}>{place?.name ?? "ABBOS"}</h1>
               {isAdminMode ? (
                 <button
                   type="button"
@@ -708,7 +784,7 @@ export default function PublicMenuPage() {
               </p>
             ) : null}
 
-            <div className="mt-3">
+            <div className="mt-2">
               <MenuTabs
                 menus={orderedMenus.map((menu) => ({ id: menu.id, name: menu.name }))}
                 activeMenuId={resolvedActiveMenuId}
@@ -725,7 +801,7 @@ export default function PublicMenuPage() {
               />
             </div>
 
-            <div className={`mt-4 flex items-center rounded-full px-4 py-2.5 ${isLightTheme ? "bg-neutral-100" : "bg-white/5"}`}>
+            <div className={`mt-3 flex items-center rounded-full px-4 py-2.5 ${isLightTheme ? "bg-neutral-100" : "bg-white/5"}`}>
               <input
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
@@ -778,36 +854,13 @@ export default function PublicMenuPage() {
             </div>
           </div>
 
-          {isAdminMode ? (
-            <div className="fixed bottom-0 left-1/2 z-20 flex w-full max-w-[620px] -translate-x-1/2 items-center justify-around border-t border-neutral-200 bg-white py-2 dark:border-neutral-800 dark:bg-neutral-900">
-              <button type="button" className="cursor-pointer text-center text-xs" style={{ color: accentColor }}>
-                <div className="text-base">✎</div>
-                Edit menu
-              </button>
-              <button type="button" className="cursor-pointer text-center text-xs text-neutral-500">
-                <div className="text-base">🧩</div>
-                Components
-              </button>
-              <button
-                type="button"
-                onClick={() => router.push(`/${locale}/p/${slug}/qr-code`)}
-                className="cursor-pointer text-center text-xs text-neutral-500"
-              >
-                <div className="text-base">⌗</div>
-                QR code
-              </button>
-              <button type="button" className="cursor-pointer text-center text-xs text-neutral-500">
-                <div className="text-base">⋯</div>
-                More
-              </button>
-            </div>
-          ) : null}
+          {isAdminMode ? <BottomNav locale={locale} slug={slug} active="menu" accentColor={accentColor} /> : null}
         </div>
       )}
 
       {isAdminMode && menuEditorOpen ? (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 p-4">
-          <div className="w-full max-w-[520px] rounded-3xl bg-white p-6 dark:bg-neutral-900">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 p-4" onClick={() => setMenuEditorOpen(false)}>
+          <div className="w-full max-w-[520px] rounded-3xl bg-white p-6 dark:bg-neutral-900" onClick={(event) => event.stopPropagation()}>
             <h3 className="text-2xl font-semibold text-neutral-900 dark:text-white">Create menu</h3>
             <div className="mt-5 space-y-4">
               <label className="block">
@@ -848,8 +901,8 @@ export default function PublicMenuPage() {
       ) : null}
 
       {isAdminMode && categoryEditorOpen ? (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 p-4">
-          <div className="w-full max-w-[520px] rounded-3xl bg-white p-6 dark:bg-neutral-900">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 p-4" onClick={() => setCategoryEditorOpen(false)}>
+          <div className="w-full max-w-[520px] rounded-3xl bg-white p-6 dark:bg-neutral-900" onClick={(event) => event.stopPropagation()}>
             <h3 className="text-2xl font-semibold text-neutral-900 dark:text-white">
               {categoryToEdit ? "Edit category" : "Create category"}
             </h3>
@@ -908,12 +961,56 @@ export default function PublicMenuPage() {
               </label>
               <label className="block">
                 <span className="mb-1 block text-sm text-neutral-500 dark:text-neutral-400">Category background image</span>
-                <input
-                  value={categoryForm.imageUrl}
-                  onChange={(event) => setCategoryForm((current) => ({ ...current, imageUrl: event.target.value }))}
-                  placeholder="https://..."
-                  className="w-full rounded-xl border border-dashed border-neutral-300 bg-transparent px-3 py-2.5 text-sm text-neutral-800 outline-none dark:border-neutral-700 dark:text-neutral-100"
-                />
+                <div className="space-y-2">
+                  <label className="relative flex h-40 w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-dashed border-neutral-300 bg-neutral-50 text-base text-neutral-500 transition hover:border-orange-400 hover:text-orange-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-400">
+                    {categoryForm.imageUrl ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={categoryForm.imageUrl} alt={categoryForm.name || "Category preview"} className="h-full w-full object-cover" />
+                        <div className="absolute inset-0 bg-black/35" />
+                        <div className="absolute right-2 top-2 z-10 flex gap-2">
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              setEditorState({ open: true, target: "category", imageUrl: categoryForm.imageUrl });
+                            }}
+                            className="rounded-md bg-black/70 px-2 py-1 text-xs font-medium text-white"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              setCategoryForm((current) => ({ ...current, imageUrl: "" }));
+                            }}
+                            className="rounded-md bg-black/70 px-2 py-1 text-xs font-medium text-white"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <span>{uploadingCategoryImage ? "Uploading..." : "Upload category image"}</span>
+                    )}
+                    <input
+                      ref={categoryImageInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(event) => void handleCategoryImageUpload(event.target.files?.[0] ?? null)}
+                    />
+                  </label>
+                  <input
+                    value={categoryForm.imageUrl}
+                    onChange={(event) => setCategoryForm((current) => ({ ...current, imageUrl: event.target.value }))}
+                    placeholder="Or paste image URL"
+                    className="w-full rounded-lg border border-neutral-200 bg-transparent px-3 py-2 text-xs text-neutral-500 outline-none transition focus:border-orange-400 dark:border-neutral-800 dark:text-neutral-400"
+                  />
+                </div>
               </label>
             </div>
             <div className="mt-6 flex justify-end gap-3">
@@ -937,8 +1034,8 @@ export default function PublicMenuPage() {
       ) : null}
 
       {isAdminMode && categoryToRemove ? (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 p-4">
-          <div className="w-full max-w-[340px] rounded-3xl bg-white p-6 dark:bg-neutral-900">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 p-4" onClick={() => setCategoryToRemove(null)}>
+          <div className="w-full max-w-[340px] rounded-3xl bg-white p-6 dark:bg-neutral-900" onClick={(event) => event.stopPropagation()}>
             <h3 className="text-2xl font-semibold text-neutral-900 dark:text-white">Remove {categoryToRemove.name} section?</h3>
             <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-300">All menu items in this section will be deleted</p>
             <div className="mt-6 flex justify-end gap-3">
@@ -965,8 +1062,8 @@ export default function PublicMenuPage() {
       ) : null}
 
       {isAdminMode && establishmentEditorOpen ? (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 p-4">
-          <div className="max-h-[90vh] w-full max-w-[620px] overflow-y-auto rounded-3xl bg-white p-6 dark:bg-neutral-900">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 p-4" onClick={() => setEstablishmentEditorOpen(false)}>
+          <div className="max-h-[90vh] w-full max-w-[620px] overflow-y-auto rounded-3xl bg-white p-6 dark:bg-neutral-900" onClick={(event) => event.stopPropagation()}>
             <h3 className="text-2xl font-semibold text-neutral-900 dark:text-white">Edit establishment info</h3>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -1031,21 +1128,109 @@ export default function PublicMenuPage() {
               </label>
               <label>
                 <span className="mb-1 block text-sm text-neutral-500 dark:text-neutral-400">Logo</span>
-                <input
-                  value={establishmentForm.logoUrl}
-                  onChange={(e) => setEstablishmentForm((c) => ({ ...c, logoUrl: e.target.value }))}
-                  className="w-full rounded-xl border border-dashed border-neutral-300 bg-transparent px-3 py-2.5 text-sm text-neutral-800 outline-none dark:border-neutral-700 dark:text-neutral-100"
-                  placeholder="Upload logo URL"
-                />
+                <div className="space-y-2">
+                  <label className="relative flex h-40 w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-dashed border-neutral-300 bg-neutral-50 text-base text-neutral-500 transition hover:border-orange-400 hover:text-orange-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-400">
+                    {establishmentForm.logoUrl ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={establishmentForm.logoUrl} alt="Logo preview" className="h-full w-full object-cover" />
+                        <div className="absolute inset-0 bg-black/35" />
+                        <div className="absolute right-2 top-2 z-10 flex gap-2">
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              setEditorState({ open: true, target: "logo", imageUrl: establishmentForm.logoUrl });
+                            }}
+                            className="rounded-md bg-black/70 px-2 py-1 text-xs font-medium text-white"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              setEstablishmentForm((current) => ({ ...current, logoUrl: "" }));
+                            }}
+                            className="rounded-md bg-black/70 px-2 py-1 text-xs font-medium text-white"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <span>{uploadingLogo ? "Uploading..." : "Upload logo"}</span>
+                    )}
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(event) => void handleLogoUpload(event.target.files?.[0] ?? null)}
+                    />
+                  </label>
+                  <input
+                    value={establishmentForm.logoUrl}
+                    onChange={(e) => setEstablishmentForm((c) => ({ ...c, logoUrl: e.target.value }))}
+                    className="w-full rounded-lg border border-neutral-200 bg-transparent px-3 py-2 text-xs text-neutral-500 outline-none transition focus:border-orange-400 dark:border-neutral-800 dark:text-neutral-400"
+                    placeholder="Or paste image URL"
+                  />
+                </div>
               </label>
               <label>
                 <span className="mb-1 block text-sm text-neutral-500 dark:text-neutral-400">Background image</span>
-                <input
-                  value={establishmentForm.backgroundImage}
-                  onChange={(e) => setEstablishmentForm((c) => ({ ...c, backgroundImage: e.target.value }))}
-                  className="w-full rounded-xl border border-dashed border-neutral-300 bg-transparent px-3 py-2.5 text-sm text-neutral-800 outline-none dark:border-neutral-700 dark:text-neutral-100"
-                  placeholder="Upload background URL"
-                />
+                <div className="space-y-2">
+                  <label className="relative flex h-40 w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-dashed border-neutral-300 bg-neutral-50 text-base text-neutral-500 transition hover:border-orange-400 hover:text-orange-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-400">
+                    {establishmentForm.backgroundImage ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={establishmentForm.backgroundImage} alt="Background preview" className="h-full w-full object-cover" />
+                        <div className="absolute inset-0 bg-black/35" />
+                        <div className="absolute right-2 top-2 z-10 flex gap-2">
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              setEditorState({ open: true, target: "background", imageUrl: establishmentForm.backgroundImage });
+                            }}
+                            className="rounded-md bg-black/70 px-2 py-1 text-xs font-medium text-white"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              setEstablishmentForm((current) => ({ ...current, backgroundImage: "" }));
+                            }}
+                            className="rounded-md bg-black/70 px-2 py-1 text-xs font-medium text-white"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <span>{uploadingBackground ? "Uploading..." : "Upload background"}</span>
+                    )}
+                    <input
+                      ref={backgroundInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(event) => void handleBackgroundUpload(event.target.files?.[0] ?? null)}
+                    />
+                  </label>
+                  <input
+                    value={establishmentForm.backgroundImage}
+                    onChange={(e) => setEstablishmentForm((c) => ({ ...c, backgroundImage: e.target.value }))}
+                    className="w-full rounded-lg border border-neutral-200 bg-transparent px-3 py-2 text-xs text-neutral-500 outline-none transition focus:border-orange-400 dark:border-neutral-800 dark:text-neutral-400"
+                    placeholder="Or paste image URL"
+                  />
+                </div>
               </label>
               <label>
                 <span className="mb-1 block text-sm text-neutral-500 dark:text-neutral-400">Wi-Fi password</span>
@@ -1168,6 +1353,7 @@ export default function PublicMenuPage() {
                 />
               </label>
             </div>
+            {imageUploadError ? <p className="mt-3 text-sm text-red-500">{imageUploadError}</p> : null}
 
             <div className="mt-6 flex justify-end gap-3">
               <button
@@ -1195,13 +1381,7 @@ export default function PublicMenuPage() {
             addTitle: t("items.addModalTitle"),
             editTitle: t("items.editModalTitle"),
             name: t("items.name"),
-            nameUz: `${t("items.name")} (UZ)`,
-            nameRu: `${t("items.name")} (RU)`,
-            nameEn: `${t("items.name")} (EN)`,
             description: t("items.description"),
-            descriptionUz: `${t("items.description")} (UZ)`,
-            descriptionRu: `${t("items.description")} (RU)`,
-            descriptionEn: `${t("items.description")} (EN)`,
             price: t("items.price"),
             image: t("items.image"),
             badge: t("items.badge"),
@@ -1216,6 +1396,13 @@ export default function PublicMenuPage() {
           }}
         />
       ) : null}
+      <ImageEditorModal
+        open={editorState.open}
+        imageUrl={editorState.imageUrl}
+        aspect={16 / 9}
+        onClose={() => setEditorState({ open: false, target: null, imageUrl: "" })}
+        onSave={handleSaveEditedImage}
+      />
     </div>
   );
 }

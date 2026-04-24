@@ -481,6 +481,44 @@
         "itemNameRequired": "Item name is required.",
         "itemPriceRequired": "Price is required."
       },
+      "components": {
+        "title": "Components",
+        "sections": {
+          "addons": "Addons",
+          "visibility": "Item visibility",
+          "locales": "Restaurant languages",
+          "scheduledPrices": "Scheduled prices"
+        },
+        "actions": {
+          "add": "Add +",
+          "create": "Create +",
+          "save": "Save"
+        },
+        "addons": {
+          "namePlaceholder": "Addon name",
+          "singleChoice": "Single choice",
+          "multipleChoice": "Multiple choice",
+          "options": "options"
+        },
+        "visibility": {
+          "inStock": "In stock",
+          "visible": "Visible"
+        },
+        "locales": {
+          "primary": "Primary",
+          "makePrimary": "Make primary"
+        },
+        "scheduled": {
+          "targetName": "Target name",
+          "price": "Price"
+        },
+        "bottomNav": {
+          "menu": "Edit menu",
+          "components": "Components",
+          "qrCode": "QR code",
+          "more": "More"
+        }
+      },
       "confirmDeleteCategory": "Delete this category?",
       "confirmDeleteItem": "Delete this item?"
     }

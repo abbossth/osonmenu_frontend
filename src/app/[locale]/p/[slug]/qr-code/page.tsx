@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import QRCode from "qrcode";
+import { BottomNav } from "@/components/MenuUI/BottomNav";
 
 type MenuResponse = { place?: { name?: string; color?: string } };
 
@@ -106,28 +107,7 @@ export default function QrCodePage() {
         </button>
       </div>
 
-      <div className="fixed bottom-0 left-1/2 z-20 flex w-full max-w-[620px] -translate-x-1/2 items-center justify-around border-t border-neutral-200 bg-white py-2">
-        <button
-          type="button"
-          onClick={() => router.push(`/${locale}/p/${slug}`)}
-          className="cursor-pointer text-center text-xs text-neutral-500"
-        >
-          <div className="text-base">✎</div>
-          Edit menu
-        </button>
-        <button type="button" className="cursor-pointer text-center text-xs text-neutral-500">
-          <div className="text-base">🧩</div>
-          Components
-        </button>
-        <button type="button" className="cursor-pointer text-center text-xs" style={{ color: accentColor }}>
-          <div className="text-base">⌗</div>
-          QR code
-        </button>
-        <button type="button" className="cursor-pointer text-center text-xs text-neutral-500">
-          <div className="text-base">⋯</div>
-          More
-        </button>
-      </div>
+      <BottomNav locale={locale} slug={slug} active="qr" accentColor={accentColor} />
     </div>
   );
 }

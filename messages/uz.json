@@ -481,6 +481,44 @@
         "itemNameRequired": "Taom nomi majburiy.",
         "itemPriceRequired": "Narx majburiy."
       },
+      "components": {
+        "title": "Komponentlar",
+        "sections": {
+          "addons": "Qo'shimchalar",
+          "visibility": "Taom ko'rinishi",
+          "locales": "Restoran tillari",
+          "scheduledPrices": "Rejalashtirilgan narxlar"
+        },
+        "actions": {
+          "add": "Qo'shish +",
+          "create": "Yaratish +",
+          "save": "Saqlash"
+        },
+        "addons": {
+          "namePlaceholder": "Qo'shimcha nomi",
+          "singleChoice": "Bitta tanlov",
+          "multipleChoice": "Ko'p tanlov",
+          "options": "opsiya"
+        },
+        "visibility": {
+          "inStock": "Mavjud",
+          "visible": "Ko'rinadi"
+        },
+        "locales": {
+          "primary": "Asosiy",
+          "makePrimary": "Asosiy qilish"
+        },
+        "scheduled": {
+          "targetName": "Nomi",
+          "price": "Narx"
+        },
+        "bottomNav": {
+          "menu": "Menyu",
+          "components": "Komponentlar",
+          "qrCode": "QR kod",
+          "more": "Yana"
+        }
+      },
       "confirmDeleteCategory": "Ushbu kategoriyani o'chirasizmi?",
       "confirmDeleteItem": "Ushbu taomni o'chirasizmi?"
     }

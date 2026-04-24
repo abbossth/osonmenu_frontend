@@ -24,6 +24,9 @@ export async function POST(request: NextRequest) {
       price?: number | string;
       imageUrl?: string;
       badge?: "popular" | "new" | null;
+      isVisible?: boolean;
+      isAvailable?: boolean;
+      addonIds?: string[];
     };
 
     const slug = normalizeSlug(body.slug);
@@ -43,6 +46,11 @@ export async function POST(request: NextRequest) {
     const price = normalizePrice(body.price);
     const imageUrl = typeof body.imageUrl === "string" ? body.imageUrl : "";
     const badge = normalizeBadge(body.badge);
+    const isVisible = typeof body.isVisible === "boolean" ? body.isVisible : true;
+    const isAvailable = typeof body.isAvailable === "boolean" ? body.isAvailable : true;
+    const addonIds = Array.isArray(body.addonIds)
+      ? body.addonIds.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0)
+      : [];
 
     if (!slug || !categoryId || !name || Number.isNaN(price)) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
@@ -72,6 +80,9 @@ export async function POST(request: NextRequest) {
       price,
       imageUrl,
       badge,
+      isVisible,
+      isAvailable,
+      addonIds,
       order: nextOrder,
     });
     await establishment.save();

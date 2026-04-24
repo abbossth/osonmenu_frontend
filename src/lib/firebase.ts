@@ -67,6 +67,8 @@ export function getFirebaseStorage() {
     throw new Error("Firebase storage can only be used in browser runtime.");
   }
 
-  cachedStorage = getStorage(getFirebaseApp());
+  const configuredBucket = (process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ?? firebaseConfig.storageBucket ?? "").trim();
+  const bucketUrl = configuredBucket.startsWith("gs://") ? configuredBucket : `gs://${configuredBucket}`;
+  cachedStorage = configuredBucket ? getStorage(getFirebaseApp(), bucketUrl) : getStorage(getFirebaseApp());
   return cachedStorage;
 }

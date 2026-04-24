@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AddItemModal } from "@/components/MenuBuilder/AddItemModal";
+import { BottomNav } from "@/components/MenuUI/BottomNav";
 import { MenuTabs } from "@/components/MenuUI/MenuTabs";
 import { ItemList } from "@/components/MenuUI/ItemList";
 import { useAuth } from "@/components/providers/auth-provider";
@@ -393,8 +394,8 @@ export default function CategoryItemsPage() {
             ) : null}
           </div>
 
-          <div className={`-mt-4 rounded-t-[28px] p-4 sm:p-5 ${isLightTheme ? "bg-white" : "bg-[#121212]"}`}>
-            <h1 className={`text-5xl font-semibold ${isLightTheme ? "text-neutral-900" : "text-white"}`}>{place?.name ?? ""}</h1>
+          <div className={`mx-1 -mt-5 rounded-[26px] px-2 py-4 sm:mx-2 sm:px-3 sm:py-5 ${isLightTheme ? "bg-white" : "bg-[#121212]"}`}>
+            <h1 className={`mt-1 text-5xl font-semibold ${isLightTheme ? "text-neutral-900" : "text-white"}`}>{place?.name ?? ""}</h1>
             <p className={`mt-2 text-sm ${isLightTheme ? "text-neutral-600" : "text-neutral-400"}`}>
               ◉ {place?.city || "City"}, {place?.country || "Country"}   〰 {place?.wifiPassword || ""}
             </p>
@@ -498,35 +499,7 @@ export default function CategoryItemsPage() {
           </div>
         </div>
       )}
-      {isAdminMode ? (
-        <div className="fixed bottom-0 left-1/2 z-20 flex w-full max-w-[620px] -translate-x-1/2 items-center justify-around border-t border-neutral-200 bg-white py-2 dark:border-neutral-800 dark:bg-neutral-900">
-          <button
-            type="button"
-            onClick={() => router.push(`/${locale}/p/${slug}`)}
-            className="cursor-pointer text-center text-xs text-neutral-500"
-          >
-            <div className="text-base">✎</div>
-            Edit menu
-          </button>
-          <button type="button" className="cursor-pointer text-center text-xs text-neutral-500">
-            <div className="text-base">🧩</div>
-            Components
-          </button>
-          <button
-            type="button"
-            onClick={() => router.push(`/${locale}/p/${slug}/qr-code`)}
-            className="cursor-pointer text-center text-xs"
-            style={{ color: accentColor }}
-          >
-            <div className="text-base">⌗</div>
-            QR code
-          </button>
-          <button type="button" className="cursor-pointer text-center text-xs text-neutral-500">
-            <div className="text-base">⋯</div>
-            More
-          </button>
-        </div>
-      ) : null}
+      {isAdminMode ? <BottomNav locale={locale} slug={slug} active="menu" accentColor={accentColor} /> : null}
       {isAdminMode ? (
         <AddItemModal
           open={itemModalOpen}
@@ -540,13 +513,7 @@ export default function CategoryItemsPage() {
             addTitle: "Add item",
             editTitle: "Edit item",
             name: "Name",
-            nameUz: "Name (UZ)",
-            nameRu: "Name (RU)",
-            nameEn: "Name (EN)",
             description: "Description",
-            descriptionUz: "Description (UZ)",
-            descriptionRu: "Description (RU)",
-            descriptionEn: "Description (EN)",
             price: "Price",
             image: "Image",
             badge: "Badge",
