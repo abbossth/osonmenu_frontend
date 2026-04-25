@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 
 type MenuBadge = "popular" | "new" | null;
@@ -44,6 +45,8 @@ export function ItemCard({
   onDelete,
   onAddUnder,
 }: ItemCardProps) {
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
   return (
     <div className="space-y-2">
       <motion.article
@@ -58,7 +61,12 @@ export function ItemCard({
         {imageUrl ? (
           <div className="relative">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={imageUrl} alt={name} className="h-48 w-full object-cover" />
+            <img
+              src={imageUrl}
+              alt={name}
+              className="h-48 w-full cursor-zoom-in object-cover"
+              onClick={() => setIsPreviewOpen(true)}
+            />
             {badge ? (
               <span
                 className="absolute left-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white"
@@ -116,6 +124,28 @@ export function ItemCard({
         >
           +
         </button>
+      ) : null}
+      {isPreviewOpen && imageUrl ? (
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setIsPreviewOpen(false)}
+        >
+          <button
+            type="button"
+            onClick={() => setIsPreviewOpen(false)}
+            className="absolute right-4 top-4 z-[121] h-10 w-10 rounded-full bg-black/70 text-xl text-white"
+            aria-label="Close image preview"
+          >
+            ×
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={imageUrl}
+            alt={name}
+            className="max-h-[90vh] max-w-[95vw] rounded-2xl object-contain"
+            onClick={(event) => event.stopPropagation()}
+          />
+        </div>
       ) : null}
     </div>
   );
