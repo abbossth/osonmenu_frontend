@@ -141,6 +141,7 @@ export function AddItemModal({ open, item, labels, onClose, onSave }: AddItemMod
     <AnimatePresence>
       {open ? (
         <motion.div
+          key="add-item-modal"
           className="fixed inset-0 z-[90] grid place-items-center bg-black/35 p-4 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -282,13 +283,16 @@ export function AddItemModal({ open, item, labels, onClose, onSave }: AddItemMod
           </motion.div>
         </motion.div>
       ) : null}
-      <ImageEditorModal
-        open={editorOpen}
-        imageUrl={preview}
-        aspect={16 / 9}
-        onClose={() => setEditorOpen(false)}
-        onSave={handleSaveEditedImage}
-      />
+      {editorOpen ? (
+        <ImageEditorModal
+          key="add-item-image-editor"
+          open={editorOpen}
+          imageUrl={preview}
+          aspect={16 / 9}
+          onClose={() => setEditorOpen(false)}
+          onSave={handleSaveEditedImage}
+        />
+      ) : null}
     </AnimatePresence>
   );
 }
