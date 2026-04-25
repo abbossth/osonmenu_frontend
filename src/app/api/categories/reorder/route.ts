@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { normalizeSlug, verifyUserId, findUserEstablishment } from "@/app/api/_utils/menu-builder";
+import { CategoryEntityModel } from "@/models/CategoryEntity";
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -33,6 +34,27 @@ export async function PATCH(request: NextRequest) {
       category.order = index;
     });
     await establishment.save();
+    await Promise.all(
+      scoped.map((category: { _id: unknown; menuName?: string; name?: string; nameI18n?: unknown; description?: string; imageUrl?: string; isVisible?: boolean; order: number }) =>
+        CategoryEntityModel.updateOne(
+          { _id: category._id, establishmentId: establishment._id },
+          {
+            $set: {
+              establishmentId: establishment._id,
+              menuId,
+              menuName: category.menuName || "Menu",
+              name: category.name || "Untitled",
+              nameI18n: category.nameI18n || { uz: "", ru: "", en: "" },
+              description: category.description || "",
+              imageUrl: category.imageUrl || "",
+              isVisible: typeof category.isVisible === "boolean" ? category.isVisible : true,
+              order: category.order,
+            },
+          },
+          { upsert: true },
+        ),
+      ),
+    );
 
     return NextResponse.json({ categories: establishment.categories });
   } catch (error) {

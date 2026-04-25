@@ -5,6 +5,7 @@ import {
   verifyUserId,
   findUserEstablishment,
 } from "@/app/api/_utils/menu-builder";
+import { CategoryEntityModel } from "@/models/CategoryEntity";
 
 export async function POST(request: NextRequest) {
   try {
@@ -58,8 +59,26 @@ export async function POST(request: NextRequest) {
       items: [],
     });
     await establishment.save();
+    const category = establishment.categories[establishment.categories.length - 1];
+    await CategoryEntityModel.updateOne(
+      { _id: category._id, establishmentId: establishment._id },
+      {
+        $set: {
+          establishmentId: establishment._id,
+          menuId,
+          menuName,
+          name,
+          nameI18n,
+          description,
+          imageUrl,
+          isVisible,
+          order: nextOrder,
+        },
+      },
+      { upsert: true },
+    );
 
-    return NextResponse.json({ category: establishment.categories[establishment.categories.length - 1] }, { status: 201 });
+    return NextResponse.json({ category }, { status: 201 });
   } catch (error) {
     console.error("[API /api/categories POST] Failed", error);
     return NextResponse.json({ error: "Failed to create category" }, { status: 500 });

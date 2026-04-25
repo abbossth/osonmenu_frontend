@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { normalizeSlug, verifyUserId, findUserEstablishment } from "@/app/api/_utils/menu-builder";
+import { MenuEntityModel } from "@/models/MenuEntity";
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -23,6 +24,23 @@ export async function PATCH(request: NextRequest) {
       menu.order = index;
     });
     await establishment.save();
+    await Promise.all(
+      establishment.menus.map((menu: { id: string; name: string; order: number; isVisible?: boolean }) =>
+        MenuEntityModel.updateOne(
+          { establishmentId: establishment._id, id: menu.id },
+          {
+            $set: {
+              establishmentId: establishment._id,
+              id: menu.id,
+              name: menu.name,
+              order: menu.order,
+              isVisible: typeof menu.isVisible === "boolean" ? menu.isVisible : true,
+            },
+          },
+          { upsert: true },
+        ),
+      ),
+    );
     return NextResponse.json({ menus: establishment.menus });
   } catch (error) {
     console.error("[API /api/menus/reorder PATCH] Failed", error);

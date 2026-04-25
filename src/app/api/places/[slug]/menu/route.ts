@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyUserId, normalizeSlug } from "@/app/api/_utils/menu-builder";
 import { getDefaultCategoryImage } from "@/lib/category-default-image";
 import { connectToMongoDB } from "@/lib/mongodb";
+import { CategoryEntityModel } from "@/models/CategoryEntity";
 import { EstablishmentModel } from "@/models/Establishment";
+import { ItemEntityModel } from "@/models/ItemEntity";
+import { MenuEntityModel } from "@/models/MenuEntity";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -173,25 +176,96 @@ export async function GET(request: NextRequest, { params }: Params) {
     if (!slug) return NextResponse.json({ error: "Invalid slug" }, { status: 400 });
 
     await connectToMongoDB();
-    const establishment = userId
-      ? await EstablishmentModel.findOne({ slug, $or: [{ ownerId: userId }, { userId }] }).sort({ createdAt: -1 })
-      : await EstablishmentModel.findOne({ slug }).sort({ createdAt: -1 });
+    const establishment = await EstablishmentModel.findOne({ slug }).sort({ createdAt: -1 });
     if (!establishment) return NextResponse.json({ error: "Establishment not found" }, { status: 404 });
 
     const ownerId = establishment.ownerId || establishment.userId;
     const isOwner = Boolean(userId && ownerId === userId);
-    const categories = normalizeCategories(establishment.categories);
-    const menus = buildMenus(
-      categories,
-      Array.isArray(establishment.menus)
-        ? establishment.menus.map((menu: { id: string; name: string; order?: number; isVisible?: boolean }) => ({
+    const [menuDocs, categoryDocs] = await Promise.all([
+      MenuEntityModel.find({ establishmentId: establishment._id }).lean(),
+      CategoryEntityModel.find({ establishmentId: establishment._id }).lean(),
+    ]);
+    const categoryIds = categoryDocs.map((entry) => entry._id);
+    const itemDocs =
+      categoryIds.length > 0
+        ? await ItemEntityModel.find({ establishmentId: establishment._id, categoryId: { $in: categoryIds } }).lean()
+        : [];
+
+    const useEntityCollections = menuDocs.length > 0 || categoryDocs.length > 0 || itemDocs.length > 0;
+
+    const categories = useEntityCollections
+      ? categoryDocs
+          .map((category, categoryIndex) => {
+            const items = itemDocs
+              .filter((item) => String(item.categoryId) === String(category._id))
+              .map((item, itemIndex) => ({
+                _id: String(item._id),
+                name: typeof item.name === "string" ? item.name : "",
+                nameI18n: normalizeI18n(item.nameI18n, typeof item.name === "string" ? item.name : ""),
+                description: typeof item.description === "string" ? item.description : "",
+                descriptionI18n: normalizeI18n(
+                  item.descriptionI18n,
+                  typeof item.description === "string" ? item.description : "",
+                ),
+                price: typeof item.price === "number" && Number.isFinite(item.price) ? item.price : 0,
+                imageUrl: typeof item.imageUrl === "string" ? item.imageUrl : "",
+                badge: item.badge === "popular" || item.badge === "new" ? item.badge : null,
+                isVisible: typeof item.isVisible === "boolean" ? item.isVisible : true,
+                isAvailable: typeof item.isAvailable === "boolean" ? item.isAvailable : true,
+                addonIds: Array.isArray(item.addonIds)
+                  ? item.addonIds.filter((entry: unknown): entry is string => typeof entry === "string")
+                  : [],
+                order: normalizeOrder(item.order, itemIndex),
+              }))
+              .sort((a, b) => a.order - b.order)
+              .map((item, index) => ({ ...item, order: index }));
+
+            return {
+              _id: String(category._id),
+              menuId:
+                typeof category.menuId === "string" && category.menuId.trim() ? category.menuId.trim() : "main",
+              menuName:
+                typeof category.menuName === "string" && category.menuName.trim() ? category.menuName.trim() : "Menu",
+              name: typeof category.name === "string" ? category.name : "Untitled",
+              nameI18n: normalizeI18n(
+                category.nameI18n,
+                typeof category.name === "string" ? category.name : "Untitled",
+              ),
+              description: typeof category.description === "string" ? category.description : "",
+              imageUrl:
+                typeof category.imageUrl === "string" && category.imageUrl.trim()
+                  ? category.imageUrl.trim()
+                  : getDefaultCategoryImage(typeof category.name === "string" ? category.name : "menu"),
+              isVisible: typeof category.isVisible === "boolean" ? category.isVisible : true,
+              order: normalizeOrder(category.order, categoryIndex),
+              items,
+            };
+          })
+          .sort((a, b) => a.order - b.order)
+          .map((category, index) => ({ ...category, order: index }))
+      : normalizeCategories(establishment.categories);
+
+    const menus = useEntityCollections
+      ? buildMenus(
+          categories,
+          menuDocs.map((menu, index) => ({
             id: menu.id,
             name: menu.name,
-            order: menu.order,
-            isVisible: menu.isVisible,
-          }))
-        : [],
-    );
+            order: normalizeOrder(menu.order, index),
+            isVisible: typeof menu.isVisible === "boolean" ? menu.isVisible : true,
+          })),
+        )
+      : buildMenus(
+          categories,
+          Array.isArray(establishment.menus)
+            ? establishment.menus.map((menu: { id: string; name: string; order?: number; isVisible?: boolean }) => ({
+                id: menu.id,
+                name: menu.name,
+                order: menu.order,
+                isVisible: menu.isVisible,
+              }))
+            : [],
+        );
     const addons = normalizeAddons(establishment.addons);
     const scheduledPrices = normalizeScheduledPrices(establishment.scheduledPrices);
     const enabledLanguages = Array.isArray(establishment.enabledLanguages)

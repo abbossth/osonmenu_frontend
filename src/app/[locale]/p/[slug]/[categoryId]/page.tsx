@@ -395,7 +395,19 @@ export default function CategoryItemsPage() {
           </div>
 
           <div className={`mx-1 -mt-5 rounded-[26px] px-2 py-4 sm:mx-2 sm:px-3 sm:py-5 ${isLightTheme ? "bg-white" : "bg-[#121212]"}`}>
-            <h1 className={`mt-1 text-5xl font-semibold ${isLightTheme ? "text-neutral-900" : "text-white"}`}>{place?.name ?? ""}</h1>
+            <div className="mt-1 flex items-center gap-2">
+              <h1 className={`text-5xl font-semibold ${isLightTheme ? "text-neutral-900" : "text-white"}`}>{place?.name ?? ""}</h1>
+              {isAdminMode ? (
+                <button
+                  type="button"
+                  onClick={() => router.push(`/${locale}/p/${slug}`)}
+                  className="cursor-pointer text-neutral-500 transition hover:text-neutral-200"
+                  aria-label="Edit restaurant"
+                >
+                  ✎
+                </button>
+              ) : null}
+            </div>
             <p className={`mt-2 text-sm ${isLightTheme ? "text-neutral-600" : "text-neutral-400"}`}>
               ◉ {place?.city || "City"}, {place?.country || "Country"}   〰 {place?.wifiPassword || ""}
             </p>

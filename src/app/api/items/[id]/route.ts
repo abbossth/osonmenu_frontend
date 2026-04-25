@@ -8,6 +8,7 @@ import {
   verifyUserId,
   findUserEstablishment,
 } from "@/app/api/_utils/menu-builder";
+import { ItemEntityModel } from "@/models/ItemEntity";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -90,6 +91,27 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     item.isAvailable = isAvailable;
     item.addonIds = addonIds;
     await establishment.save();
+    await ItemEntityModel.updateOne(
+      { _id: itemObjectId, establishmentId: establishment._id },
+      {
+        $set: {
+          establishmentId: establishment._id,
+          categoryId: category._id,
+          name,
+          nameI18n,
+          description,
+          descriptionI18n,
+          price,
+          imageUrl,
+          badge,
+          isVisible,
+          isAvailable,
+          addonIds,
+          order: item.order,
+        },
+      },
+      { upsert: true },
+    );
 
     return NextResponse.json({ item });
   } catch (error) {
@@ -124,6 +146,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       currentItem.order = index;
     });
     await establishment.save();
+    await ItemEntityModel.deleteOne({ _id: itemObjectId, establishmentId: establishment._id });
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("[API /api/items/:id DELETE] Failed", error);

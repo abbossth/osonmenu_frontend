@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { asObjectId, normalizeName, normalizeSlug, verifyUserId, findUserEstablishment } from "@/app/api/_utils/menu-builder";
+import { CategoryEntityModel } from "@/models/CategoryEntity";
+import { ItemEntityModel } from "@/models/ItemEntity";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -52,6 +54,23 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     category.imageUrl = imageUrl;
     category.isVisible = isVisible;
     await establishment.save();
+    await CategoryEntityModel.updateOne(
+      { _id: categoryObjectId, establishmentId: establishment._id },
+      {
+        $set: {
+          establishmentId: establishment._id,
+          menuId,
+          menuName,
+          name,
+          nameI18n,
+          description,
+          imageUrl,
+          isVisible,
+          order: category.order,
+        },
+      },
+      { upsert: true },
+    );
     return NextResponse.json({ category });
   } catch (error) {
     console.error("[API /api/categories/:id PATCH] Failed", error);
@@ -85,6 +104,10 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       item.order = index;
     });
     await establishment.save();
+    await Promise.all([
+      CategoryEntityModel.deleteOne({ _id: categoryObjectId, establishmentId: establishment._id }),
+      ItemEntityModel.deleteMany({ categoryId: categoryObjectId, establishmentId: establishment._id }),
+    ]);
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("[API /api/categories/:id DELETE] Failed", error);

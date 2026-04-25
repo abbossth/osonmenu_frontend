@@ -8,6 +8,7 @@ import {
   verifyUserId,
   findUserEstablishment,
 } from "@/app/api/_utils/menu-builder";
+import { ItemEntityModel } from "@/models/ItemEntity";
 
 export async function POST(request: NextRequest) {
   try {
@@ -86,7 +87,29 @@ export async function POST(request: NextRequest) {
       order: nextOrder,
     });
     await establishment.save();
-    return NextResponse.json({ item: category.items[category.items.length - 1] }, { status: 201 });
+    const item = category.items[category.items.length - 1];
+    await ItemEntityModel.updateOne(
+      { _id: item._id, establishmentId: establishment._id },
+      {
+        $set: {
+          establishmentId: establishment._id,
+          categoryId: categoryObjectId,
+          name,
+          nameI18n,
+          description,
+          descriptionI18n,
+          price,
+          imageUrl,
+          badge,
+          isVisible,
+          isAvailable,
+          addonIds,
+          order: nextOrder,
+        },
+      },
+      { upsert: true },
+    );
+    return NextResponse.json({ item }, { status: 201 });
   } catch (error) {
     console.error("[API /api/items POST] Failed", error);
     return NextResponse.json({ error: "Failed to create item" }, { status: 500 });

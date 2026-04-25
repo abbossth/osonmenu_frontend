@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { normalizeName, normalizeSlug, verifyUserId, findUserEstablishment } from "@/app/api/_utils/menu-builder";
+import { MenuEntityModel } from "@/models/MenuEntity";
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,6 +42,23 @@ export async function POST(request: NextRequest) {
       entry.order = index;
     });
     await establishment.save();
+    await Promise.all(
+      establishment.menus.map((entry: { id: string; name: string; order: number; isVisible?: boolean }) =>
+        MenuEntityModel.updateOne(
+          { establishmentId: establishment._id, id: entry.id },
+          {
+            $set: {
+              establishmentId: establishment._id,
+              id: entry.id,
+              name: entry.name,
+              order: entry.order,
+              isVisible: typeof entry.isVisible === "boolean" ? entry.isVisible : true,
+            },
+          },
+          { upsert: true },
+        ),
+      ),
+    );
 
     return NextResponse.json({ menu }, { status: 201 });
   } catch (error) {

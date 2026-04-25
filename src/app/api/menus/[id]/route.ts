@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { normalizeName, normalizeSlug, verifyUserId, findUserEstablishment } from "@/app/api/_utils/menu-builder";
+import { CategoryEntityModel } from "@/models/CategoryEntity";
+import { ItemEntityModel } from "@/models/ItemEntity";
+import { MenuEntityModel } from "@/models/MenuEntity";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -28,6 +31,15 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       });
     }
     await establishment.save();
+    await MenuEntityModel.updateOne(
+      { establishmentId: establishment._id, id },
+      { $set: { name, isVisible } },
+      { upsert: true },
+    );
+    await CategoryEntityModel.updateMany(
+      { establishmentId: establishment._id, menuId: id },
+      { $set: { menuName: name } },
+    );
     return NextResponse.json({ menu });
   } catch (error) {
     console.error("[API /api/menus/:id PATCH] Failed", error);
@@ -56,6 +68,13 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       entry.order = index;
     });
     await establishment.save();
+    const categories = await CategoryEntityModel.find({ establishmentId: establishment._id, menuId: id }).select("_id").lean();
+    const categoryIds = categories.map((entry) => entry._id);
+    await Promise.all([
+      MenuEntityModel.deleteOne({ establishmentId: establishment._id, id }),
+      CategoryEntityModel.deleteMany({ establishmentId: establishment._id, menuId: id }),
+      categoryIds.length ? ItemEntityModel.deleteMany({ establishmentId: establishment._id, categoryId: { $in: categoryIds } }) : Promise.resolve(),
+    ]);
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("[API /api/menus/:id DELETE] Failed", error);
