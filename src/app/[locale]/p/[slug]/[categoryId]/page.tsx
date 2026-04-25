@@ -470,6 +470,7 @@ export default function CategoryItemsPage() {
                   <ItemList
                     currencySymbol={place?.currencySymbol}
                     accentColor={accentColor}
+                    isLight={isLightTheme}
                     isAdmin={isAdminMode}
                     onMoveUp={(id) => void moveItem(id, "up")}
                     onMoveDown={(id) => void moveItem(id, "down")}

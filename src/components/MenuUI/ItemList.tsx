@@ -18,6 +18,7 @@ type ItemListProps = {
   items: ItemRow[];
   currencySymbol?: string;
   accentColor?: string;
+  isLight?: boolean;
   isAdmin?: boolean;
   onMoveUp?: (id: string) => void;
   onMoveDown?: (id: string) => void;
@@ -30,6 +31,7 @@ export function ItemList({
   items,
   currencySymbol,
   accentColor = "#ff4048",
+  isLight = false,
   isAdmin = false,
   onMoveUp,
   onMoveDown,
@@ -51,6 +53,7 @@ export function ItemList({
             badge={item.badge}
             currencySymbol={currencySymbol}
             accentColor={accentColor}
+            isLight={isLight}
             isAdmin={isAdmin}
             onMoveUp={onMoveUp}
             onMoveDown={onMoveDown}

@@ -13,6 +13,7 @@ type ItemCardProps = {
   currencySymbol?: string;
   badge?: MenuBadge;
   accentColor?: string;
+  isLight?: boolean;
   isAdmin?: boolean;
   onMoveUp?: (id: string) => void;
   onMoveDown?: (id: string) => void;
@@ -35,6 +36,7 @@ export function ItemCard({
   badge = null,
   currencySymbol = "",
   accentColor = "#ff4048",
+  isLight = false,
   isAdmin = false,
   onMoveUp,
   onMoveDown,
@@ -49,7 +51,9 @@ export function ItemCard({
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
-        className="overflow-hidden rounded-2xl border border-white/10 bg-[#131313]"
+        className={`overflow-hidden rounded-2xl ${
+          isLight ? "border border-neutral-200 bg-white" : "border border-white/10 bg-[#131313]"
+        }`}
       >
         {imageUrl ? (
           <div className="relative">
@@ -64,7 +68,11 @@ export function ItemCard({
               </span>
             ) : null}
             {isAdmin ? (
-              <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2 py-1 text-xs text-white backdrop-blur">
+              <div
+                className={`absolute right-2 top-2 flex items-center gap-1 rounded-full px-2 py-1 text-xs backdrop-blur ${
+                  isLight ? "border border-black/10 bg-white/85 text-neutral-800" : "border border-white/20 bg-black/70 text-white"
+                }`}
+              >
                 <button type="button" onClick={() => onMoveUp?.(id)}>⇧</button>
                 <button type="button" onClick={() => onMoveDown?.(id)}>⇩</button>
                 <button type="button" onClick={() => onEdit?.(id)}>✎</button>
@@ -83,15 +91,19 @@ export function ItemCard({
             </span>
           ) : null}
           {!imageUrl && isAdmin ? (
-            <div className="mb-1 flex items-center justify-end gap-1 rounded-full border border-white/20 bg-black/40 px-2 py-1 text-xs text-white backdrop-blur">
+            <div
+              className={`mb-1 flex items-center justify-end gap-1 rounded-full px-2 py-1 text-xs backdrop-blur ${
+                isLight ? "border border-black/10 bg-neutral-100 text-neutral-800" : "border border-white/20 bg-black/40 text-white"
+              }`}
+            >
               <button type="button" onClick={() => onMoveUp?.(id)}>⇧</button>
               <button type="button" onClick={() => onMoveDown?.(id)}>⇩</button>
               <button type="button" onClick={() => onEdit?.(id)}>✎</button>
               <button type="button" onClick={() => onDelete?.(id)}>🗑</button>
             </div>
           ) : null}
-          <h4 className="text-lg font-semibold text-white">{name}</h4>
-          <p className="line-clamp-2 text-sm text-neutral-400">{description}</p>
+          <h4 className={`text-lg font-semibold ${isLight ? "text-neutral-900" : "text-white"}`}>{name}</h4>
+          <p className={`line-clamp-2 text-sm ${isLight ? "text-neutral-600" : "text-neutral-400"}`}>{description}</p>
           <p className="pt-1 text-2xl font-semibold" style={{ color: accentColor }}>{formatPrice(price, currencySymbol)}</p>
         </div>
       </motion.article>
