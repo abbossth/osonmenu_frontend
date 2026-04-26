@@ -2,6 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faFacebookF, faInstagram, faTiktok, faXTwitter } from "@fortawesome/free-brands-svg-icons";
+import { faCompass, faLocationDot, faStar } from "@fortawesome/free-solid-svg-icons";
 import { AddItemModal } from "@/components/MenuBuilder/AddItemModal";
 import { BottomNav } from "@/components/MenuUI/BottomNav";
 import { MenuTabs } from "@/components/MenuUI/MenuTabs";
@@ -41,6 +44,13 @@ function pickLocalized(locale: "uz" | "ru" | "en", text: MenuLocalizedText | und
   return text[locale] || text.uz || text.ru || text.en || fallback;
 }
 
+function toExternalUrl(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
+  return `https://${trimmed}`;
+}
+
 export default function CategoryItemsPage() {
   const params = useParams<{ slug: string; locale: string; categoryId: string }>();
   const router = useRouter();
@@ -78,6 +88,15 @@ export default function CategoryItemsPage() {
   const isAdminMode = Boolean(firebaseUser?.uid && place?.ownerId && firebaseUser.uid === place.ownerId);
   const isLightTheme = (place?.colorTheme ?? "light") === "light";
   const accentColor = place?.color?.trim() || "#f7906c";
+  const detailsLine = [place?.phone, place?.address].filter(Boolean).join("  •  ");
+  const socialLinks = [
+    { label: "Instagram", icon: faInstagram, value: place?.instagram ?? "" },
+    { label: "Facebook", icon: faFacebookF, value: place?.facebook ?? "" },
+    { label: "TikTok", icon: faTiktok, value: place?.tiktok ?? "" },
+    { label: "Twitter", icon: faXTwitter, value: place?.twitter ?? "" },
+    { label: "TripAdvisor", icon: faCompass, value: place?.tripAdvisor ?? "" },
+    { label: "Google Reviews", icon: faStar, value: place?.googleReviews ?? "" },
+  ].filter((entry) => entry.value.trim().length > 0);
 
   const filteredItems = useMemo(() => {
     if (!activeCategory) return [];
@@ -359,7 +378,7 @@ export default function CategoryItemsPage() {
           <div className="h-40 animate-pulse rounded-2xl bg-neutral-800" />
         </div>
       ) : (
-        <div className={`mx-auto max-w-[620px] overflow-hidden rounded-[28px] shadow-sm ${isLightTheme ? "border border-neutral-200 bg-white" : "border border-white/10 bg-[#121212]"}`}>
+        <div className={`mx-auto mt-2 max-w-[620px] overflow-hidden rounded-[30px] shadow-sm ${isLightTheme ? "border border-neutral-200 bg-white" : "border border-white/10 bg-[#121212]"}`}>
           <div
             className="relative h-44 overflow-hidden"
             style={
@@ -386,7 +405,7 @@ export default function CategoryItemsPage() {
             </button>
             {place?.logoUrl ? (
               <div className="pointer-events-none absolute inset-0 grid place-items-center">
-                <div className="h-20 w-20 overflow-hidden rounded-full border-2 border-white/80 bg-white shadow-lg">
+                <div className="h-20 w-20 overflow-hidden rounded-full border-2 border-white/90 bg-white shadow-xl">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={place.logoUrl} alt={place.name} className="h-full w-full object-cover" />
                 </div>
@@ -394,9 +413,9 @@ export default function CategoryItemsPage() {
             ) : null}
           </div>
 
-          <div className={`mx-1 -mt-5 rounded-[26px] px-2 py-4 sm:mx-2 sm:px-3 sm:py-5 ${isLightTheme ? "bg-white" : "bg-[#121212]"}`}>
+          <div className={`mx-1 -mt-5 rounded-[26px] px-2 pt-8 sm:mx-2 sm:px-3 sm:pt-9 ${isLightTheme ? "bg-white" : "bg-[#121212]"}`}>
             <div className="mt-1 flex items-center gap-2">
-              <h1 className={`text-5xl font-semibold ${isLightTheme ? "text-neutral-900" : "text-white"}`}>{place?.name ?? ""}</h1>
+              <h1 className={`text-4xl font-semibold tracking-tight ${isLightTheme ? "text-neutral-900" : "text-white"}`}>{place?.name ?? ""}</h1>
               {isAdminMode ? (
                 <button
                   type="button"
@@ -409,10 +428,50 @@ export default function CategoryItemsPage() {
               ) : null}
             </div>
             <p className={`mt-2 text-sm ${isLightTheme ? "text-neutral-600" : "text-neutral-400"}`}>
-              ◉ {place?.city || "City"}, {place?.country || "Country"}   〰 {place?.wifiPassword || ""}
+              ◉ {place?.city || "Awesome City"}, {place?.country || "The Best Country"}   〰 {place?.wifiPassword || "CoolWiFiPassword"}
             </p>
+            {detailsLine ? <p className={`mt-1 text-xs ${isLightTheme ? "text-neutral-500" : "text-neutral-400"}`}>{detailsLine}</p> : null}
+            {place?.googleMapsLink?.trim() ? (
+              <a
+                href={toExternalUrl(place.googleMapsLink)}
+                target="_blank"
+                rel="noreferrer noopener"
+                className={`mt-1 inline-flex items-center gap-1 text-xs underline-offset-2 hover:underline ${
+                  isLightTheme ? "text-neutral-700" : "text-neutral-300"
+                }`}
+              >
+                <FontAwesomeIcon icon={faLocationDot} />
+                <span>Show on map</span>
+              </a>
+            ) : null}
+            {socialLinks.length ? (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {socialLinks.map((entry) => (
+                  <a
+                    key={entry.label}
+                    href={toExternalUrl(entry.value)}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className={`rounded-full border px-2.5 py-1 text-xs transition ${
+                      isLightTheme
+                        ? "border-neutral-200 text-neutral-700 hover:bg-neutral-100"
+                        : "border-white/15 text-neutral-300 hover:bg-white/10"
+                    }`}
+                    aria-label={entry.label}
+                    title={entry.label}
+                  >
+                    <FontAwesomeIcon icon={entry.icon} />
+                  </a>
+                ))}
+              </div>
+            ) : null}
+            {place?.additionalInfo?.trim() ? (
+              <p className={`mt-2 text-sm ${isLightTheme ? "text-neutral-700" : "text-neutral-300"}`}>
+                {place.additionalInfo}
+              </p>
+            ) : null}
 
-            <div className="mt-3">
+            <div className="mt-2">
               <MenuTabs
                 menus={orderedMenus.map((menu) => ({ id: menu.id, name: menu.name }))}
                 activeMenuId={resolvedActiveMenuId}
@@ -429,7 +488,7 @@ export default function CategoryItemsPage() {
               />
             </div>
 
-            <div className={`mt-4 flex items-center rounded-full px-4 py-2.5 ${isLightTheme ? "bg-neutral-100" : "bg-white/5"}`}>
+            <div className={`mt-3 flex items-center rounded-full px-4 py-2.5 ${isLightTheme ? "bg-neutral-100" : "bg-white/5"}`}>
               <input
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
