@@ -196,6 +196,9 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         }
 
         setSuccessMessage(t("registerSuccess"));
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem("openCreatePlaceModal", "1");
+        }
         setTimeout(() => router.replace("/profile"), 1000);
         return;
       }

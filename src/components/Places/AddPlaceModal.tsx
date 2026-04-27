@@ -16,6 +16,7 @@ type AddPlaceModalProps = {
   onClose: () => void;
   onCreate: (payload: AddPlacePayload) => Promise<Place>;
   existingSlugs: string[];
+  existingNames: string[];
   labels: {
     title: string;
     name: string;
@@ -27,6 +28,7 @@ type AddPlaceModalProps = {
     required: string;
     invalidSlug: string;
     duplicateSlug: string;
+    duplicateName: string;
     genericError: string;
     success: string;
     urlPrefix: string;
@@ -65,40 +67,54 @@ function isDuplicateSlugError(error: unknown) {
   );
 }
 
-export function AddPlaceModal({ open, onClose, onCreate, existingSlugs, labels }: AddPlaceModalProps) {
+export function AddPlaceModal({ open, onClose, onCreate, existingSlugs, existingNames, labels }: AddPlaceModalProps) {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [currency, setCurrency] = useState<"UZS" | "USD">("UZS");
   const [language, setLanguage] = useState<"uz" | "ru" | "en">("uz");
   const [error, setError] = useState<string | null>(null);
+  const [slugError, setSlugError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
 
   const normalizedSlug = useMemo(() => slug.trim().toLowerCase(), [slug]);
 
   useEffect(() => {
-    if (slugManuallyEdited) return;
     const base = slugifyName(name);
     const nextSlug = buildUniqueSlug(base, existingSlugs);
     setSlug(nextSlug);
-  }, [name, existingSlugs, slugManuallyEdited]);
+  }, [name, existingSlugs]);
+
+  useEffect(() => {
+    const normalizedName = name.trim().toLowerCase();
+    if (!normalizedName) {
+      setNameError(null);
+      return;
+    }
+    const exists = existingNames.some((entry) => entry.trim().toLowerCase() === normalizedName);
+    setNameError(exists ? labels.duplicateName : null);
+  }, [name, existingNames, labels.duplicateName]);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setSlugError(null);
     setSuccess(null);
 
     if (!name.trim() || !normalizedSlug || !currency || !language) {
       setError(labels.required);
       return;
     }
+    if (nameError) {
+      return;
+    }
     if (!slugRegex.test(normalizedSlug)) {
-      setError(labels.invalidSlug);
+      setSlugError(labels.invalidSlug);
       return;
     }
     if (existingSlugs.includes(normalizedSlug)) {
-      setError(labels.duplicateSlug);
+      setSlugError(labels.duplicateSlug);
       return;
     }
 
@@ -113,7 +129,8 @@ export function AddPlaceModal({ open, onClose, onCreate, existingSlugs, labels }
       setSuccess(labels.success);
       setName("");
       setSlug("");
-      setSlugManuallyEdited(false);
+      setSlugError(null);
+      setNameError(null);
       setCurrency("UZS");
       setLanguage("uz");
       setTimeout(() => {
@@ -121,7 +138,11 @@ export function AddPlaceModal({ open, onClose, onCreate, existingSlugs, labels }
         onClose();
       }, 700);
     } catch (error) {
-      setError(isDuplicateSlugError(error) ? labels.duplicateSlug : labels.genericError);
+      if (isDuplicateSlugError(error)) {
+        setSlugError(labels.duplicateSlug);
+      } else {
+        setError(labels.genericError);
+      }
     } finally {
       setLoading(false);
     }
@@ -152,9 +173,13 @@ export function AddPlaceModal({ open, onClose, onCreate, existingSlugs, labels }
                 <label className="mb-1.5 block text-sm font-medium text-neutral-700 dark:text-neutral-300">{labels.name}</label>
                 <input
                   value={name}
-                  onChange={(event) => setName(event.target.value)}
+                  onChange={(event) => {
+                    setName(event.target.value);
+                    if (slugError) setSlugError(null);
+                  }}
                   className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
                 />
+                {nameError ? <p className="mt-1 text-xs text-red-600 dark:text-red-400">{nameError}</p> : null}
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-neutral-700 dark:text-neutral-300">{labels.slug}</label>
@@ -163,12 +188,13 @@ export function AddPlaceModal({ open, onClose, onCreate, existingSlugs, labels }
                   <input
                     value={slug}
                     onChange={(event) => {
-                      setSlugManuallyEdited(true);
+                      if (slugError) setSlugError(null);
                       setSlug(event.target.value.toLowerCase().replace(/\s+/g, ""));
                     }}
                     className="w-full bg-transparent outline-none"
                   />
                 </div>
+                {slugError ? <p className="mt-1 text-xs text-red-600 dark:text-red-400">{slugError}</p> : null}
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>

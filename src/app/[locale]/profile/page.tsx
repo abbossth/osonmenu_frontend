@@ -40,6 +40,7 @@ export default function ProfilePage() {
 
   const domain = typeof window === "undefined" ? "yourdomain.com" : window.location.host;
   const existingSlugs = useMemo(() => places.map((place) => place.slug), [places]);
+  const existingNames = useMemo(() => places.map((place) => place.name), [places]);
   const fallbackProfileUser = useMemo<AppUser | null>(() => {
     if (appUser) return appUser;
     if (!firebaseUser?.uid || !firebaseUser.email) return null;
@@ -86,6 +87,16 @@ export default function ProfilePage() {
     }
     void fetchPlaces();
   }, [firebaseUser]);
+
+  useEffect(() => {
+    if (placesLoading) return;
+    if (typeof window === "undefined") return;
+    const shouldOpen = window.sessionStorage.getItem("openCreatePlaceModal") === "1";
+    if (!shouldOpen) return;
+    window.sessionStorage.removeItem("openCreatePlaceModal");
+    setActiveTab("places");
+    setModalOpen(true);
+  }, [placesLoading]);
 
   async function createPlace(payload: CreatePlacePayload) {
     if (!firebaseUser) throw new Error("Unauthorized");
@@ -283,17 +294,19 @@ export default function ProfilePage() {
         onClose={() => setModalOpen(false)}
         onCreate={createPlace}
         existingSlugs={existingSlugs}
+        existingNames={existingNames}
         labels={{
           title: t("places.modal.title"),
           name: t("establishment.name"),
-          slug: t("establishment.slug"),
+          slug: "Qisqa nom",
           currency: t("establishment.currency"),
           language: t("establishment.language"),
           save: t("places.modal.save"),
           cancel: t("places.modal.cancel"),
           required: t("errors.requiredField"),
-          invalidSlug: t("errors.slugInvalid"),
-          duplicateSlug: t("errors.slugDuplicate"),
+          invalidSlug: "Qisqa nom faqat kichik harf, raqam va chiziqcha bilan yozilsin",
+          duplicateSlug: "Bu qisqa nom band, boshqa nom kiriting",
+          duplicateName: "Bu muassasa nomi allaqachon mavjud",
           genericError: t("errors.generic"),
           success: t("places.modal.success"),
           urlPrefix: `${domain}/p/`,
