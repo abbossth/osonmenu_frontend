@@ -32,9 +32,52 @@ function serialize(place: {
   };
 }
 
-const slugRegex = /^[a-z0-9]+$/;
+const slugRegex = /^[a-z0-9-]+$/;
 const allowedCurrencies = new Set(["UZS", "USD"]);
 const allowedLanguages = new Set(["uz", "ru", "en"]);
+
+function slugify(input: string) {
+  const normalized = input
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  return normalized || "place";
+}
+
+function escapeRegex(input: string) {
+  return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+async function buildUniqueSlug(preferred: string) {
+  const base = slugify(preferred);
+  const pattern = new RegExp(`^${escapeRegex(base)}(?:-(\\d+))?$`);
+  const existing = await EstablishmentModel.find({ slug: { $regex: pattern } })
+    .select({ slug: 1, _id: 0 })
+    .lean();
+
+  if (!existing.some((entry) => entry.slug === base)) {
+    return base;
+  }
+
+  const usedNumbers = new Set(
+    existing
+      .map((entry) => {
+        if (entry.slug === base) return 0;
+        const match = entry.slug.match(new RegExp(`^${escapeRegex(base)}-(\\d+)$`));
+        return match ? Number.parseInt(match[1], 10) : null;
+      })
+      .filter((value): value is number => value !== null && Number.isFinite(value)),
+  );
+
+  let suffix = 1;
+  while (usedNumbers.has(suffix)) {
+    suffix += 1;
+  }
+  return `${base}-${suffix}`;
+}
 
 export async function GET(request: NextRequest) {
   const token = getBearerToken(request);
@@ -70,15 +113,13 @@ export async function POST(request: NextRequest) {
     };
 
     const name = body.name?.trim();
-    const slug = body.slug?.trim().toLowerCase();
+    const requestedSlug = body.slug?.trim().toLowerCase() ?? "";
     const currency = body.currency;
     const language = body.language;
 
     if (
       !name ||
       name.length < 2 ||
-      !slug ||
-      !slugRegex.test(slug) ||
       !currency ||
       !allowedCurrencies.has(currency) ||
       !language ||
@@ -89,13 +130,8 @@ export async function POST(request: NextRequest) {
 
     await connectToMongoDB();
 
-    const existingSlug = await EstablishmentModel.findOne({
-      slug,
-      $or: [{ ownerId: decoded.uid }, { userId: decoded.uid }],
-    }).lean();
-    if (existingSlug) {
-      return NextResponse.json({ error: "Slug already exists" }, { status: 409 });
-    }
+    const slugSource = requestedSlug && slugRegex.test(requestedSlug) ? requestedSlug : name;
+    const slug = await buildUniqueSlug(slugSource);
 
     const created = await EstablishmentModel.create({
       ownerId: decoded.uid,

@@ -232,8 +232,9 @@ establishmentSchema.pre("validate", function syncOwnerAndUser() {
   }
 });
 
-establishmentSchema.index({ ownerId: 1, slug: 1 }, { unique: true });
-establishmentSchema.index({ userId: 1, slug: 1 }, { unique: true });
+establishmentSchema.index({ slug: 1 }, { unique: true });
+establishmentSchema.index({ ownerId: 1, slug: 1 });
+establishmentSchema.index({ userId: 1, slug: 1 });
 
 export const EstablishmentModel =
   models.Establishment || model<EstablishmentDocument>("Establishment", establishmentSchema);

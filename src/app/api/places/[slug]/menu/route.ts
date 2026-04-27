@@ -176,7 +176,7 @@ export async function GET(request: NextRequest, { params }: Params) {
     if (!slug) return NextResponse.json({ error: "Invalid slug" }, { status: 400 });
 
     await connectToMongoDB();
-    const establishment = await EstablishmentModel.findOne({ slug }).sort({ createdAt: -1 });
+    const establishment = await EstablishmentModel.findOne({ slug }).sort({ createdAt: 1 });
     if (!establishment) return NextResponse.json({ error: "Establishment not found" }, { status: 404 });
 
     const ownerId = establishment.ownerId || establishment.userId;

@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Place } from "./PlaceCard";
 
 type AddPlacePayload = {
@@ -35,6 +35,27 @@ type AddPlaceModalProps = {
 
 const slugRegex = /^[a-z0-9]+$/;
 
+function slugifyName(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function buildUniqueSlug(base: string, existingSlugs: string[]) {
+  const normalizedBase = base || "place";
+  if (!existingSlugs.includes(normalizedBase)) return normalizedBase;
+
+  let index = 1;
+  while (existingSlugs.includes(`${normalizedBase}-${index}`)) {
+    index += 1;
+  }
+  return `${normalizedBase}-${index}`;
+}
+
 function isDuplicateSlugError(error: unknown) {
   return (
     typeof error === "object" &&
@@ -52,8 +73,16 @@ export function AddPlaceModal({ open, onClose, onCreate, existingSlugs, labels }
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
 
   const normalizedSlug = useMemo(() => slug.trim().toLowerCase(), [slug]);
+
+  useEffect(() => {
+    if (slugManuallyEdited) return;
+    const base = slugifyName(name);
+    const nextSlug = buildUniqueSlug(base, existingSlugs);
+    setSlug(nextSlug);
+  }, [name, existingSlugs, slugManuallyEdited]);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -84,6 +113,7 @@ export function AddPlaceModal({ open, onClose, onCreate, existingSlugs, labels }
       setSuccess(labels.success);
       setName("");
       setSlug("");
+      setSlugManuallyEdited(false);
       setCurrency("UZS");
       setLanguage("uz");
       setTimeout(() => {
@@ -132,7 +162,10 @@ export function AddPlaceModal({ open, onClose, onCreate, existingSlugs, labels }
                   <span className="mr-2 text-neutral-500 dark:text-neutral-400">{labels.urlPrefix}</span>
                   <input
                     value={slug}
-                    onChange={(event) => setSlug(event.target.value.toLowerCase().replace(/\s+/g, ""))}
+                    onChange={(event) => {
+                      setSlugManuallyEdited(true);
+                      setSlug(event.target.value.toLowerCase().replace(/\s+/g, ""));
+                    }}
                     className="w-full bg-transparent outline-none"
                   />
                 </div>
