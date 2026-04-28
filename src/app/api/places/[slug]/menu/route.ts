@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyUserId, normalizeSlug } from "@/app/api/_utils/menu-builder";
+import { verifyUser, normalizeSlug } from "@/app/api/_utils/menu-builder";
 import { getDefaultCategoryImage } from "@/lib/category-default-image";
 import { connectToMongoDB } from "@/lib/mongodb";
 import { CategoryEntityModel } from "@/models/CategoryEntity";
@@ -164,11 +164,11 @@ function buildMenus(
 
 export async function GET(request: NextRequest, { params }: Params) {
   try {
-    let userId: string | null = null;
+    let authUser: { uid: string; email: string } | null = null;
     try {
-      userId = await verifyUserId(request);
+      authUser = await verifyUser(request);
     } catch {
-      userId = null;
+      authUser = null;
     }
 
     const routeParams = await params;
@@ -180,7 +180,19 @@ export async function GET(request: NextRequest, { params }: Params) {
     if (!establishment) return NextResponse.json({ error: "Establishment not found" }, { status: 404 });
 
     const ownerId = establishment.ownerId || establishment.userId;
-    const isOwner = Boolean(userId && ownerId === userId);
+    const isOwner = Boolean(authUser?.uid && ownerId === authUser.uid);
+    const teamMembers: Array<{ userId?: string; email?: string }> = Array.isArray(establishment.teamMembers)
+      ? establishment.teamMembers
+      : [];
+    const isTeamMember = Boolean(
+      authUser?.uid &&
+        teamMembers.some((member) => {
+          const memberUserId = typeof member.userId === "string" ? member.userId : "";
+          const memberEmail = typeof member.email === "string" ? member.email.toLowerCase() : "";
+          return memberUserId === authUser.uid || (authUser.email && memberEmail === authUser.email);
+        }),
+    );
+    const canEdit = isOwner || isTeamMember;
     const [menuDocs, categoryDocs] = await Promise.all([
       MenuEntityModel.find({ establishmentId: establishment._id }).lean(),
       CategoryEntityModel.find({ establishmentId: establishment._id }).lean(),
@@ -312,6 +324,7 @@ export async function GET(request: NextRequest, { params }: Params) {
         scheduledPrices,
       },
       isOwner,
+      canEdit,
     });
   } catch (error) {
     console.error("[API /api/places/[slug]/menu GET] Failed", error);

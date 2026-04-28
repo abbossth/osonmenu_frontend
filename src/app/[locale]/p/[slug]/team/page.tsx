@@ -10,6 +10,7 @@ type MenuResponse = { place?: MenuPlace };
 
 type TeamMember = {
   id: string;
+  userId?: string;
   name: string;
   role: "Owner" | "Employee";
   email: string;
@@ -24,66 +25,150 @@ export default function TeamPage() {
   const locale = params.locale === "ru" || params.locale === "en" ? params.locale : "uz";
   const [place, setPlace] = useState<MenuPlace | null>(null);
   const [members, setMembers] = useState<TeamMember[]>([]);
+  const [isOwner, setIsOwner] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
   const [infoMemberId, setInfoMemberId] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [note, setNote] = useState("");
+  const [ownerCandidate, setOwnerCandidate] = useState<TeamMember | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadPlace() {
+    async function loadData() {
       if (!slug) return;
+      setLoading(true);
       const headers: HeadersInit = {};
       if (firebaseUser) {
         try {
           headers.Authorization = `Bearer ${await firebaseUser.getIdToken()}`;
         } catch {}
       }
-      const res = await fetch(`/api/places/${slug}/menu`, { headers });
-      if (!res.ok) return;
-      const data = (await res.json()) as MenuResponse;
-      if (!data.place) return;
-      setPlace(data.place);
-      setMembers([
-        {
-          id: "owner",
-          name: data.place.name || "Owner",
-          role: "Owner",
-          email: "owner@restaurant.com",
-          note: "",
-        },
-      ]);
+      try {
+        const [menuRes, teamRes] = await Promise.all([
+          fetch(`/api/places/${slug}/menu`, { headers }),
+          fetch(`/api/places/${slug}/team`, { headers }),
+        ]);
+        if (menuRes.ok) {
+          const menuData = (await menuRes.json()) as MenuResponse;
+          if (menuData.place) setPlace(menuData.place);
+        }
+        if (teamRes.ok) {
+          const teamData = (await teamRes.json()) as { isOwner?: boolean; members?: TeamMember[] };
+          setIsOwner(Boolean(teamData.isOwner));
+          setMembers(Array.isArray(teamData.members) ? teamData.members : []);
+        }
+      } finally {
+        setLoading(false);
+      }
     }
-    void loadPlace();
+    void loadData();
   }, [firebaseUser, slug]);
 
   const accentColor = place?.color?.trim() || "#f7906c";
   const infoMember = members.find((m) => m.id === infoMemberId) ?? null;
 
-  function addMember() {
+  async function addMember() {
+    if (!firebaseUser || !isOwner) return;
     if (!newName.trim() || !newEmail.trim()) return;
-    setMembers((current) => [
-      ...current,
-      {
-        id: `member-${Date.now()}`,
-        name: newName.trim(),
-        role: "Employee",
-        email: newEmail.trim(),
-        note: "",
-      },
-    ]);
-    setNewName("");
-    setNewEmail("");
-    setAddOpen(false);
+    setActionError(null);
+    try {
+      const token = await firebaseUser.getIdToken();
+      const res = await fetch(`/api/places/${slug}/team`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name: newName.trim(), email: newEmail.trim() }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error || "Failed to add");
+      }
+      const data = (await res.json()) as { member: TeamMember };
+      setMembers((current) => [...current, data.member]);
+      setNewName("");
+      setNewEmail("");
+      setAddOpen(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to add member";
+      setActionError(message);
+    }
   }
 
-  function saveInfo() {
-    if (!infoMember) return;
-    setMembers((current) =>
-      current.map((member) => (member.id === infoMember.id ? { ...member, note } : member)),
-    );
-    setInfoMemberId(null);
-    setNote("");
+  async function saveInfo() {
+    if (!firebaseUser || !infoMember) return;
+    setActionError(null);
+    try {
+      const token = await firebaseUser.getIdToken();
+      const res = await fetch(`/api/places/${slug}/team/${infoMember.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ note }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error || "Failed to save");
+      }
+      setMembers((current) =>
+        current.map((member) => (member.id === infoMember.id ? { ...member, note } : member)),
+      );
+      setInfoMemberId(null);
+      setNote("");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to save note";
+      setActionError(message);
+    }
+  }
+
+  async function removeMember(memberId: string) {
+    if (!firebaseUser || !isOwner) return;
+    setActionError(null);
+    try {
+      const token = await firebaseUser.getIdToken();
+      const res = await fetch(`/api/places/${slug}/team/${memberId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error || "Failed to remove");
+      }
+      setMembers((current) => current.filter((entry) => entry.id !== memberId));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to remove member";
+      setActionError(message);
+    }
+  }
+
+  async function makeOwner(member: TeamMember) {
+    if (!firebaseUser || !isOwner || member.role === "Owner") return;
+    setActionError(null);
+    try {
+      const token = await firebaseUser.getIdToken();
+      const res = await fetch(`/api/places/${slug}/team/${member.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ makeOwner: true }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error || "Failed to transfer ownership");
+      }
+      setOwnerCandidate(null);
+      router.refresh();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to transfer ownership";
+      setActionError(message);
+    }
   }
 
   return (
@@ -112,13 +197,17 @@ export default function TeamPage() {
           </button>
           <button
             type="button"
-            onClick={() => setAddOpen(true)}
+            onClick={() => (isOwner ? setAddOpen(true) : null)}
+            disabled={!isOwner}
             className="cursor-pointer rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
-            style={{ backgroundColor: accentColor }}
+            style={{ backgroundColor: isOwner ? accentColor : "#bdbdbd" }}
           >
             Add employee +
           </button>
         </div>
+
+        {actionError ? <p className="mt-2 text-sm text-red-500">{actionError}</p> : null}
+        {loading ? <p className="mt-2 text-sm text-neutral-500">Loading team...</p> : null}
 
         <div className="mt-4 space-y-3">
           {members.map((member) => (
@@ -128,21 +217,32 @@ export default function TeamPage() {
                   <p className="text-lg font-semibold text-neutral-800">{member.name}</p>
                   <p className="text-sm text-neutral-500">{member.role}</p>
                   <p className="mt-1 text-sm text-neutral-700">{member.email}</p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setInfoMemberId(member.id);
-                      setNote(member.note || "");
-                    }}
-                    className="mt-2 cursor-pointer rounded-lg bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-400"
-                  >
-                    Add information
-                  </button>
+                  {member.role !== "Owner" && isOwner ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setInfoMemberId(member.id);
+                          setNote(member.note || "");
+                        }}
+                        className="mt-2 cursor-pointer rounded-lg bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-400"
+                      >
+                        Add information
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setOwnerCandidate(member)}
+                        className="mt-2 block cursor-pointer rounded-lg bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-400"
+                      >
+                        Make owner
+                      </button>
+                    </>
+                  ) : null}
                 </div>
-                {member.role !== "Owner" ? (
+                {member.role !== "Owner" && isOwner ? (
                   <button
                     type="button"
-                    onClick={() => setMembers((current) => current.filter((entry) => entry.id !== member.id))}
+                    onClick={() => void removeMember(member.id)}
                     className="cursor-pointer text-red-400"
                   >
                     🗑
@@ -157,8 +257,8 @@ export default function TeamPage() {
       <BottomNav locale={locale} slug={slug} active="more" accentColor={accentColor} />
 
       {addOpen ? (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 p-4">
-          <div className="w-full max-w-[460px] rounded-3xl bg-white p-6">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 p-4" onClick={() => setAddOpen(false)}>
+          <div className="w-full max-w-[460px] rounded-3xl bg-white p-6" onClick={(event) => event.stopPropagation()}>
             <h2 className="text-4xl font-semibold text-neutral-800">Add employee</h2>
             <div className="mt-4 space-y-3">
               <input
@@ -184,7 +284,7 @@ export default function TeamPage() {
               </button>
               <button
                 type="button"
-                onClick={addMember}
+                onClick={() => void addMember()}
                 className="cursor-pointer rounded-xl px-6 py-2 font-semibold text-white"
                 style={{ backgroundColor: accentColor }}
               >
@@ -196,8 +296,8 @@ export default function TeamPage() {
       ) : null}
 
       {infoMember ? (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 p-4">
-          <div className="w-full max-w-[460px] rounded-3xl bg-white p-6">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 p-4" onClick={() => setInfoMemberId(null)}>
+          <div className="w-full max-w-[460px] rounded-3xl bg-white p-6" onClick={(event) => event.stopPropagation()}>
             <h2 className="text-center text-4xl font-semibold text-neutral-800">Additional information</h2>
             <p className="mt-2 text-sm text-neutral-500">This will be visible to other employees</p>
             <textarea
@@ -215,11 +315,39 @@ export default function TeamPage() {
               </button>
               <button
                 type="button"
-                onClick={saveInfo}
+                onClick={() => void saveInfo()}
                 className="cursor-pointer rounded-xl px-6 py-2 font-semibold text-white"
                 style={{ backgroundColor: accentColor }}
               >
                 Save
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {ownerCandidate ? (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 p-4" onClick={() => setOwnerCandidate(null)}>
+          <div className="w-full max-w-[460px] rounded-3xl bg-white p-6" onClick={(event) => event.stopPropagation()}>
+            <h2 className="text-center text-4xl font-semibold text-neutral-800">Make owner</h2>
+            <p className="mt-3 text-center text-sm text-neutral-500">
+              Are you sure? This user will become the only owner of this establishment.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setOwnerCandidate(null)}
+                className="cursor-pointer rounded-xl bg-orange-50 px-6 py-2 font-semibold text-orange-400"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void makeOwner(ownerCandidate)}
+                className="cursor-pointer rounded-xl px-6 py-2 font-semibold text-white"
+                style={{ backgroundColor: accentColor }}
+              >
+                Confirm
               </button>
             </div>
           </div>

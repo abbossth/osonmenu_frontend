@@ -25,6 +25,16 @@ export async function verifyUserId(request: NextRequest) {
   return decoded.uid;
 }
 
+export async function verifyUser(request: NextRequest) {
+  const token = getBearerToken(request);
+  if (!token) return null;
+  const decoded = await getAdminAuth().verifyIdToken(token);
+  return {
+    uid: decoded.uid,
+    email: typeof decoded.email === "string" ? decoded.email.toLowerCase() : "",
+  };
+}
+
 export function normalizeName(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -49,7 +59,20 @@ export function normalizePrice(value: unknown) {
 
 export async function findUserEstablishment(slug: string, userId: string) {
   await connectToMongoDB();
-  return EstablishmentModel.findOne({ slug, $or: [{ ownerId: userId }, { userId }] });
+  const directMatch = await EstablishmentModel.findOne({
+    slug,
+    $or: [{ ownerId: userId }, { userId }, { "teamMembers.userId": userId }],
+  });
+  if (directMatch) return directMatch;
+
+  try {
+    const authUser = await getAdminAuth().getUser(userId);
+    const email = authUser.email?.toLowerCase();
+    if (!email) return null;
+    return EstablishmentModel.findOne({ slug, "teamMembers.email": email });
+  } catch {
+    return null;
+  }
 }
 
 export function asObjectId(id: string) {

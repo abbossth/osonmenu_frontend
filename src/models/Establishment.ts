@@ -27,6 +27,15 @@ export type EstablishmentDocument = {
   additionalInfo?: string;
   currency: "UZS" | "USD";
   language: "uz" | "ru" | "en";
+  teamMembers?: {
+    id: string;
+    userId?: string;
+    name: string;
+    email: string;
+    role: "employee";
+    note?: string;
+    createdAt?: Date;
+  }[];
   categories: {
     _id: string;
     menuId: string;
@@ -201,6 +210,23 @@ const establishmentSchema = new Schema<EstablishmentDocument>(
     currency: { type: String, required: true, enum: ["UZS", "USD"] },
     language: { type: String, required: true, enum: ["uz", "ru", "en"] },
     enabledLanguages: { type: [String], default: ["uz", "ru", "en"] },
+    teamMembers: {
+      type: [
+        new Schema(
+          {
+            id: { type: String, required: true, trim: true },
+            userId: { type: String, default: "", trim: true },
+            name: { type: String, required: true, trim: true },
+            email: { type: String, required: true, trim: true, lowercase: true },
+            role: { type: String, enum: ["employee"], default: "employee" },
+            note: { type: String, default: "", trim: true },
+            createdAt: { type: Date, default: Date.now },
+          },
+          { _id: false },
+        ),
+      ],
+      default: [],
+    },
     menus: {
       type: [
         new Schema(

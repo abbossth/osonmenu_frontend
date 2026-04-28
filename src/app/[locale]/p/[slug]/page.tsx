@@ -16,7 +16,7 @@ import { getDefaultCategoryImage } from "@/lib/category-default-image";
 import { uploadImageToFirebase } from "@/lib/firebase-upload";
 import type { MenuCategory, MenuGroup, MenuItem, MenuLocalizedText, MenuPlace } from "@/components/MenuBuilder/types";
 
-type MenuResponse = { place: MenuPlace; isOwner?: boolean };
+type MenuResponse = { place: MenuPlace; isOwner?: boolean; canEdit?: boolean };
 type CategoryFormState = {
   name: string;
   nameI18n: MenuLocalizedText;
@@ -107,6 +107,7 @@ export default function PublicMenuPage() {
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [canEdit, setCanEdit] = useState(false);
 
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [editingItem] = useState<MenuItem | null>(null);
@@ -183,7 +184,7 @@ export default function PublicMenuPage() {
       ? activeCategoryId
       : activeMenuCategories[0]?._id ?? null;
   const activeCategory = activeMenuCategories.find((category) => category._id === resolvedActiveCategoryId) ?? null;
-  const isAdminMode = Boolean(firebaseUser?.uid && place?.ownerId && firebaseUser.uid === place.ownerId);
+  const isAdminMode = canEdit;
   const isLightTheme = (place?.colorTheme ?? "light") === "light";
   const accentColor = place?.color?.trim() || "#f7906c";
   const detailsLine = [place?.phone, place?.address].filter(Boolean).join("  •  ");
@@ -224,6 +225,7 @@ export default function PublicMenuPage() {
         }
         const data = (await res.json()) as MenuResponse;
         setPlace(data.place);
+        setCanEdit(Boolean(data.canEdit || data.isOwner));
         const firstMenu = data.place.menus?.[0] ?? null;
         const firstCategoryId = firstMenu?.categories?.[0]?._id ?? null;
         setMenuOrder((data.place.menus ?? []).map((menu) => menu.id));

@@ -12,7 +12,7 @@ import { ItemList } from "@/components/MenuUI/ItemList";
 import { useAuth } from "@/components/providers/auth-provider";
 import type { MenuCategory, MenuGroup, MenuItem, MenuLocalizedText, MenuPlace } from "@/components/MenuBuilder/types";
 
-type MenuResponse = { place: MenuPlace };
+type MenuResponse = { place: MenuPlace; isOwner?: boolean; canEdit?: boolean };
 
 function sortCategories(categories: MenuCategory[]) {
   return [...categories]
@@ -65,6 +65,7 @@ export default function CategoryItemsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [canEdit, setCanEdit] = useState(false);
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [menuOrder, setMenuOrder] = useState<string[]>([]);
@@ -85,7 +86,7 @@ export default function CategoryItemsPage() {
     activeMenuId && orderedMenus.some((menu) => menu.id === activeMenuId)
       ? activeMenuId
       : activeCategory?.menuId ?? orderedMenus[0]?.id ?? null;
-  const isAdminMode = Boolean(firebaseUser?.uid && place?.ownerId && firebaseUser.uid === place.ownerId);
+  const isAdminMode = canEdit;
   const isLightTheme = (place?.colorTheme ?? "light") === "light";
   const accentColor = place?.color?.trim() || "#f7906c";
   const detailsLine = [place?.phone, place?.address].filter(Boolean).join("  •  ");
@@ -129,6 +130,7 @@ export default function CategoryItemsPage() {
         if (!res.ok) throw new Error("Failed to fetch menu");
         const data = (await res.json()) as MenuResponse;
         setPlace(data.place);
+        setCanEdit(Boolean(data.canEdit || data.isOwner));
         setMenuOrder((data.place.menus ?? []).map((menu) => menu.id));
       } catch (loadError) {
         const message = loadError instanceof Error ? loadError.message : "Failed to load";
