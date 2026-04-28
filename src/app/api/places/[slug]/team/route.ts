@@ -151,7 +151,9 @@ export async function POST(request: NextRequest, { params }: Params) {
     try {
       const userRecord = await getAdminAuth().getUserByEmail(email);
       memberUserId = userRecord.uid;
-    } catch {}
+    } catch {
+      return NextResponse.json({ error: "Employee account not found. User must register first." }, { status: 400 });
+    }
 
     const duplicated = membersForCheck.some((member) => {
       const memberEmail = member.email?.toLowerCase() || "";

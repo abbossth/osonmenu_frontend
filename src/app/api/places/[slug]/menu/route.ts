@@ -181,9 +181,26 @@ export async function GET(request: NextRequest, { params }: Params) {
 
     const ownerId = establishment.ownerId || establishment.userId;
     const isOwner = Boolean(authUser?.uid && ownerId === authUser.uid);
-    const teamMembers: Array<{ userId?: string; email?: string }> = Array.isArray(establishment.teamMembers)
+    let teamMembers: Array<{ userId?: string; email?: string }> = Array.isArray(establishment.teamMembers)
       ? establishment.teamMembers
       : [];
+    if (authUser?.uid && authUser.email) {
+      let changed = false;
+      teamMembers = teamMembers.map((member) => {
+        const memberEmail = typeof member.email === "string" ? member.email.toLowerCase() : "";
+        const memberUserId = typeof member.userId === "string" ? member.userId : "";
+        if (!memberUserId && memberEmail === authUser?.email) {
+          changed = true;
+          return { ...member, userId: authUser.uid };
+        }
+        return member;
+      });
+      if (changed) {
+        establishment.teamMembers = teamMembers as never;
+        establishment.markModified("teamMembers");
+        await establishment.save();
+      }
+    }
     const isTeamMember = Boolean(
       authUser?.uid &&
         teamMembers.some((member) => {

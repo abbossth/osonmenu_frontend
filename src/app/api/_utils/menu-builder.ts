@@ -62,14 +62,14 @@ export async function findUserEstablishment(slug: string, userId: string) {
   const directMatch = await EstablishmentModel.findOne({
     slug,
     $or: [{ ownerId: userId }, { userId }, { "teamMembers.userId": userId }],
-  });
+  }).sort({ createdAt: 1 });
   if (directMatch) return directMatch;
 
   try {
     const authUser = await getAdminAuth().getUser(userId);
     const email = authUser.email?.toLowerCase();
     if (!email) return null;
-    return EstablishmentModel.findOne({ slug, "teamMembers.email": email });
+    return EstablishmentModel.findOne({ slug, "teamMembers.email": email }).sort({ createdAt: 1 });
   } catch {
     return null;
   }
