@@ -86,6 +86,14 @@ export async function GET(request: NextRequest) {
   try {
     const decoded = await getAdminAuth().verifyIdToken(token);
     await connectToMongoDB();
+    const scope = request.nextUrl.searchParams.get("scope");
+
+    if (scope === "slugs") {
+      const allSlugs = await EstablishmentModel.find({})
+        .select({ slug: 1, _id: 0 })
+        .lean();
+      return NextResponse.json({ slugs: allSlugs.map((entry) => entry.slug) });
+    }
 
     const places = await EstablishmentModel.find({
       $or: [{ ownerId: decoded.uid }, { userId: decoded.uid }],
@@ -129,6 +137,13 @@ export async function POST(request: NextRequest) {
     }
 
     await connectToMongoDB();
+
+    if (requestedSlug && slugRegex.test(requestedSlug)) {
+      const duplicateSlug = await EstablishmentModel.exists({ slug: requestedSlug });
+      if (duplicateSlug) {
+        return NextResponse.json({ error: "Slug already exists", code: "duplicate_slug" }, { status: 409 });
+      }
+    }
 
     const slugSource = requestedSlug && slugRegex.test(requestedSlug) ? requestedSlug : name;
     const slug = await buildUniqueSlug(slugSource);

@@ -34,13 +34,13 @@ export default function ProfilePage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<ProfileTab>("places");
   const [places, setPlaces] = useState<Place[]>([]);
+  const [allSlugs, setAllSlugs] = useState<string[]>([]);
   const [placesLoading, setPlacesLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
   const domain = typeof window === "undefined" ? "yourdomain.com" : window.location.host;
-  const existingSlugs = useMemo(() => places.map((place) => place.slug), [places]);
-  const existingNames = useMemo(() => places.map((place) => place.name), [places]);
+  const existingSlugs = useMemo(() => allSlugs, [allSlugs]);
   const fallbackProfileUser = useMemo<AppUser | null>(() => {
     if (appUser) return appUser;
     if (!firebaseUser?.uid || !firebaseUser.email) return null;
@@ -71,16 +71,24 @@ export default function ProfilePage() {
     async function fetchPlaces() {
       if (!firebaseUser) {
         setPlaces([]);
+        setAllSlugs([]);
         setPlacesLoading(false);
         return;
       }
       try {
         const token = await firebaseUser.getIdToken();
-        const res = await fetch("/api/places", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = (await res.json()) as { places: Place[] };
-        setPlaces(data.places ?? []);
+        const [placesRes, slugsRes] = await Promise.all([
+          fetch("/api/places", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch("/api/places?scope=slugs", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+        const placesData = (await placesRes.json()) as { places: Place[] };
+        const slugsData = (await slugsRes.json()) as { slugs: string[] };
+        setPlaces(placesData.places ?? []);
+        setAllSlugs(slugsData.slugs ?? []);
       } finally {
         setPlacesLoading(false);
       }
@@ -294,7 +302,6 @@ export default function ProfilePage() {
         onClose={() => setModalOpen(false)}
         onCreate={createPlace}
         existingSlugs={existingSlugs}
-        existingNames={existingNames}
         labels={{
           title: t("places.modal.title"),
           name: t("establishment.name"),
@@ -306,7 +313,6 @@ export default function ProfilePage() {
           required: t("errors.requiredField"),
           invalidSlug: "Qisqa nom faqat kichik harf, raqam va chiziqcha bilan yozilsin",
           duplicateSlug: "Bu qisqa nom band, boshqa nom kiriting",
-          duplicateName: "Bu muassasa nomi allaqachon mavjud",
           genericError: t("errors.generic"),
           success: t("places.modal.success"),
           urlPrefix: `${domain}/p/`,
