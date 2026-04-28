@@ -36,6 +36,12 @@ function normalizeString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function emailCondition(email: string) {
+  const normalized = email.trim().toLowerCase();
+  const escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return { $regex: `^${escaped}$`, $options: "i" };
+}
+
 function toMemberResponse(member: {
   id?: string;
   userId?: string;
@@ -73,7 +79,7 @@ export async function GET(request: NextRequest, { params }: Params) {
         { ownerId: authUser.uid },
         { userId: authUser.uid },
         { "teamMembers.userId": authUser.uid },
-        ...(authUser.email ? [{ "teamMembers.email": authUser.email }] : []),
+        ...(authUser.email ? [{ "teamMembers.email": emailCondition(authUser.email) }] : []),
       ],
     }, { sort: { createdAt: 1 } });
     if (!place) return NextResponse.json({ error: "Establishment not found" }, { status: 404 });
@@ -136,7 +142,7 @@ export async function POST(request: NextRequest, { params }: Params) {
         { ownerId: authUser.uid },
         { userId: authUser.uid },
         { "teamMembers.userId": authUser.uid },
-        ...(authUser.email ? [{ "teamMembers.email": authUser.email }] : []),
+        ...(authUser.email ? [{ "teamMembers.email": emailCondition(authUser.email) }] : []),
       ],
     }, { sort: { createdAt: 1 } });
     if (!place) return NextResponse.json({ error: "No access to add members" }, { status: 403 });

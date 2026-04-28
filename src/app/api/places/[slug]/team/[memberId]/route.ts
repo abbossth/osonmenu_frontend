@@ -2,13 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToMongoDB } from "@/lib/mongodb";
 import { EstablishmentModel } from "@/models/Establishment";
 import { normalizeSlug, verifyUser } from "@/app/api/_utils/menu-builder";
+import { getAdminAuth } from "@/lib/firebase-admin";
 
 type Params = { params: Promise<{ slug: string; memberId: string }> };
 type PersistedTeamMember = {
   id: string;
   userId?: string;
+  name?: string;
   email?: string;
+  role?: "employee";
   note?: string;
+  createdAt?: Date;
 };
 
 function toStableMemberId(member: PersistedTeamMember, index: number) {
@@ -32,6 +36,12 @@ function normalizeString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function emailCondition(email: string) {
+  const normalized = email.trim().toLowerCase();
+  const escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return { $regex: `^${escaped}$`, $options: "i" };
+}
+
 export async function PATCH(request: NextRequest, { params }: Params) {
   try {
     const authUser = await verifyUser(request);
@@ -50,7 +60,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         { ownerId: authUser.uid },
         { userId: authUser.uid },
         { "teamMembers.userId": authUser.uid },
-        ...(authUser.email ? [{ "teamMembers.email": authUser.email }] : []),
+        ...(authUser.email ? [{ "teamMembers.email": emailCondition(authUser.email) }] : []),
       ],
     }, { sort: { createdAt: 1 } });
     if (!place) return NextResponse.json({ error: "Establishment not found" }, { status: 404 });
@@ -85,7 +95,6 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       let targetUserId = targetMember.userId || "";
       if (!targetUserId && targetMember.email) {
         try {
-          const { getAdminAuth } = await import("@/lib/firebase-admin");
           const user = await getAdminAuth().getUserByEmail(targetMember.email);
           targetUserId = user.uid;
         } catch {
@@ -100,13 +109,59 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         );
       }
 
+      let previousOwnerEmail = "";
+      let previousOwnerName = "";
+      try {
+        const previousOwner = await getAdminAuth().getUser(ownerUid);
+        previousOwnerEmail = previousOwner.email?.toLowerCase() || "";
+        previousOwnerName =
+          previousOwner.displayName?.trim() ||
+          previousOwner.email?.split("@")[0] ||
+          "Employee";
+      } catch {
+        previousOwnerEmail = authUser.email || "";
+        previousOwnerName = authUser.email?.split("@")[0] || "Employee";
+      }
+
+      const previousOwnerAsMember: PersistedTeamMember = {
+        id: `member-${ownerUid}`,
+        userId: ownerUid,
+        name: previousOwnerName,
+        email: previousOwnerEmail,
+        role: "employee",
+        note: "",
+        createdAt: new Date(),
+      };
+
+      const withoutNewOwner = normalizedMembers.filter(
+        (member) => member.id !== targetMember.id && member.userId !== targetUserId,
+      );
+      const previousOwnerIndex = withoutNewOwner.findIndex(
+        (member) =>
+          member.userId === ownerUid ||
+          (previousOwnerEmail && (member.email || "").toLowerCase() === previousOwnerEmail),
+      );
+      const nextMembers = [...withoutNewOwner];
+      if (previousOwnerIndex >= 0) {
+        nextMembers[previousOwnerIndex] = {
+          ...nextMembers[previousOwnerIndex],
+          id: nextMembers[previousOwnerIndex].id || previousOwnerAsMember.id,
+          userId: ownerUid,
+          name: nextMembers[previousOwnerIndex].name || previousOwnerAsMember.name,
+          email: nextMembers[previousOwnerIndex].email || previousOwnerAsMember.email,
+          role: "employee",
+        };
+      } else {
+        nextMembers.push(previousOwnerAsMember);
+      }
+
       await collection.updateOne(
         { _id: place._id },
         {
           $set: {
             ownerId: targetUserId,
             userId: targetUserId,
-            teamMembers: normalizedMembers.filter((member) => member.id !== targetMember.id),
+            teamMembers: nextMembers,
           },
         },
       );
@@ -149,7 +204,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
         { ownerId: authUser.uid },
         { userId: authUser.uid },
         { "teamMembers.userId": authUser.uid },
-        ...(authUser.email ? [{ "teamMembers.email": authUser.email }] : []),
+        ...(authUser.email ? [{ "teamMembers.email": emailCondition(authUser.email) }] : []),
       ],
     }, { sort: { createdAt: 1 } });
     if (!place) return NextResponse.json({ error: "No access to remove members" }, { status: 403 });
