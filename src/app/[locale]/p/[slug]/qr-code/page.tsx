@@ -4,12 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { BottomNav } from "@/components/MenuUI/BottomNav";
+import { HeaderUserBadge } from "@/components/MenuUI/HeaderUserBadge";
+import { useAuth } from "@/components/providers/auth-provider";
 
 type MenuResponse = { place?: { name?: string; color?: string } };
 
 export default function QrCodePage() {
   const params = useParams<{ slug: string; locale: string }>();
   const router = useRouter();
+  const { firebaseUser } = useAuth();
   const slug = typeof params.slug === "string" ? params.slug : "";
   const locale = params.locale === "ru" || params.locale === "en" ? params.locale : "uz";
 
@@ -80,7 +83,7 @@ export default function QrCodePage() {
             ×
           </button>
           <p className="text-sm font-semibold tracking-wide text-neutral-700">{placeName}</p>
-          <div className="h-8 w-8 rounded-full bg-neutral-200" />
+          <HeaderUserBadge firebaseUser={firebaseUser} accentColor={accentColor} />
         </div>
 
         <h1 className="mt-5 text-2xl font-semibold text-neutral-800">QR code</h1>

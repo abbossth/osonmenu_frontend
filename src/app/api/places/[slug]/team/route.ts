@@ -138,14 +138,9 @@ export async function POST(request: NextRequest, { params }: Params) {
     const collection = EstablishmentModel.collection;
     const place = await collection.findOne({
       slug,
-      $or: [
-        { ownerId: authUser.uid },
-        { userId: authUser.uid },
-        { "teamMembers.userId": authUser.uid },
-        ...(authUser.email ? [{ "teamMembers.email": emailCondition(authUser.email) }] : []),
-      ],
+      $or: [{ ownerId: authUser.uid }, { userId: authUser.uid }],
     }, { sort: { createdAt: 1 } });
-    if (!place) return NextResponse.json({ error: "No access to add members" }, { status: 403 });
+    if (!place) return NextResponse.json({ error: "Only owner can add members" }, { status: 403 });
 
     const existingMembers: PersistedTeamMember[] = Array.isArray(place.teamMembers) ? (place.teamMembers as PersistedTeamMember[]) : [];
     const { normalized: normalizedMembers, changed } = normalizeMembers(existingMembers);

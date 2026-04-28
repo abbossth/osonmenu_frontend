@@ -56,14 +56,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const collection = EstablishmentModel.collection;
     const place = await collection.findOne({
       slug,
-      $or: [
-        { ownerId: authUser.uid },
-        { userId: authUser.uid },
-        { "teamMembers.userId": authUser.uid },
-        ...(authUser.email ? [{ "teamMembers.email": emailCondition(authUser.email) }] : []),
-      ],
+      $or: [{ ownerId: authUser.uid }, { userId: authUser.uid }],
     }, { sort: { createdAt: 1 } });
-    if (!place) return NextResponse.json({ error: "Establishment not found" }, { status: 404 });
+    if (!place) return NextResponse.json({ error: "Only owner can manage team" }, { status: 403 });
 
     const ownerUid = place.ownerId || place.userId;
     const body = (await request.json()) as { note?: string; makeOwner?: boolean };
@@ -200,14 +195,9 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     const collection = EstablishmentModel.collection;
     const place = await collection.findOne({
       slug,
-      $or: [
-        { ownerId: authUser.uid },
-        { userId: authUser.uid },
-        { "teamMembers.userId": authUser.uid },
-        ...(authUser.email ? [{ "teamMembers.email": emailCondition(authUser.email) }] : []),
-      ],
+      $or: [{ ownerId: authUser.uid }, { userId: authUser.uid }],
     }, { sort: { createdAt: 1 } });
-    if (!place) return NextResponse.json({ error: "No access to remove members" }, { status: 403 });
+    if (!place) return NextResponse.json({ error: "Only owner can manage team" }, { status: 403 });
 
     const members: PersistedTeamMember[] = Array.isArray(place.teamMembers) ? (place.teamMembers as PersistedTeamMember[]) : [];
     const { normalized: normalizedMembers, changed } = normalizeMembers(members);

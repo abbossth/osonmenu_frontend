@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { BottomNav } from "@/components/MenuUI/BottomNav";
+import { HeaderUserBadge } from "@/components/MenuUI/HeaderUserBadge";
 import { useAuth } from "@/components/providers/auth-provider";
 import type { MenuPlace } from "@/components/MenuBuilder/types";
 
@@ -47,7 +48,7 @@ export default function HelpPage() {
             ×
           </button>
           <p className="text-sm font-semibold tracking-wide text-neutral-700">{place?.name ?? "Restaurant"}</p>
-          <div className="h-8 w-8 rounded-full bg-neutral-200" />
+          <HeaderUserBadge firebaseUser={firebaseUser} ownerId={place?.ownerId} accentColor={accentColor} />
         </div>
 
         <button

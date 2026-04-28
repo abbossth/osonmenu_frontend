@@ -25,6 +25,7 @@ export default function TeamPage() {
   const locale = params.locale === "ru" || params.locale === "en" ? params.locale : "uz";
   const [place, setPlace] = useState<MenuPlace | null>(null);
   const [members, setMembers] = useState<TeamMember[]>([]);
+  const [isOwner, setIsOwner] = useState(false);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
   const [infoMemberId, setInfoMemberId] = useState<string | null>(null);
@@ -54,7 +55,8 @@ export default function TeamPage() {
           if (menuData.place) setPlace(menuData.place);
         }
         if (teamRes.ok) {
-          const teamData = (await teamRes.json()) as { members?: TeamMember[] };
+          const teamData = (await teamRes.json()) as { isOwner?: boolean; members?: TeamMember[] };
+          setIsOwner(Boolean(teamData.isOwner));
           setMembers(Array.isArray(teamData.members) ? teamData.members : []);
         }
       } finally {
@@ -66,9 +68,39 @@ export default function TeamPage() {
 
   const accentColor = place?.color?.trim() || "#f7906c";
   const infoMember = members.find((m) => m.id === infoMemberId) ?? null;
+  const currentUserEmail = (firebaseUser?.email || "").trim().toLowerCase();
+  const currentUserUid = firebaseUser?.uid || "";
+  const currentUserMember =
+    members.find((member) => {
+      const memberEmail = (member.email || "").trim().toLowerCase();
+      const memberUid = member.userId || "";
+      return Boolean(
+        (currentUserUid && memberUid && currentUserUid === memberUid) ||
+          (currentUserEmail && memberEmail && currentUserEmail === memberEmail),
+      );
+    }) ?? null;
+  const currentUserInitials = (currentUserMember?.name || "U")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("");
+  const currentUserDisplayName =
+    (currentUserMember?.name || "User").length > 15
+      ? `${(currentUserMember?.name || "User").slice(0, 15)}...`
+      : (currentUserMember?.name || "User");
+
+  function isCurrentUserMember(member: TeamMember) {
+    const memberEmail = (member.email || "").trim().toLowerCase();
+    const memberUid = member.userId || "";
+    return Boolean(
+      (currentUserUid && memberUid && currentUserUid === memberUid) ||
+        (currentUserEmail && memberEmail && currentUserEmail === memberEmail),
+    );
+  }
 
   async function addMember() {
-    if (!firebaseUser) return;
+    if (!firebaseUser || !isOwner) return;
     if (!newName.trim() || !newEmail.trim()) return;
     setActionError(null);
     try {
@@ -97,7 +129,7 @@ export default function TeamPage() {
   }
 
   async function saveInfo() {
-    if (!firebaseUser || !infoMember) return;
+    if (!firebaseUser || !infoMember || !isOwner) return;
     setActionError(null);
     try {
       const token = await firebaseUser.getIdToken();
@@ -125,7 +157,7 @@ export default function TeamPage() {
   }
 
   async function removeMember(memberId: string) {
-    if (!firebaseUser) return;
+    if (!firebaseUser || !isOwner) return;
     setActionError(null);
     try {
       const token = await firebaseUser.getIdToken();
@@ -145,7 +177,7 @@ export default function TeamPage() {
   }
 
   async function makeOwner(member: TeamMember) {
-    if (!firebaseUser || member.role === "Owner") return;
+    if (!firebaseUser || !isOwner || member.role === "Owner") return;
     setActionError(null);
     try {
       const token = await firebaseUser.getIdToken();
@@ -181,7 +213,15 @@ export default function TeamPage() {
             ×
           </button>
           <p className="text-sm font-semibold tracking-wide text-neutral-700">{place?.name ?? "Restaurant"}</p>
-          <div className="h-8 w-8 rounded-full bg-neutral-200" />
+          <div className="flex items-center gap-2">
+            <div className="grid h-8 w-8 place-items-center rounded-full bg-neutral-200 text-xs font-semibold text-neutral-700">
+              {currentUserInitials}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-neutral-700">{currentUserDisplayName}</p>
+              <p className="truncate text-xs text-neutral-500">{currentUserMember?.role || "Member"}</p>
+            </div>
+          </div>
         </div>
 
         <div className="mt-5 flex items-center justify-between gap-3">
@@ -195,9 +235,10 @@ export default function TeamPage() {
           </button>
           <button
             type="button"
-            onClick={() => setAddOpen(true)}
+            onClick={() => (isOwner ? setAddOpen(true) : null)}
+            disabled={!isOwner}
             className="cursor-pointer rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
-            style={{ backgroundColor: accentColor }}
+            style={{ backgroundColor: isOwner ? accentColor : "#bdbdbd" }}
           >
             Add employee +
           </button>
@@ -208,33 +249,50 @@ export default function TeamPage() {
 
         <div className="mt-4 space-y-3">
           {members.map((member) => (
-            <div key={member.id} className="rounded-2xl bg-white p-4 shadow-sm">
+            <div
+              key={member.id}
+              className={`rounded-2xl bg-white p-4 shadow-sm ${isCurrentUserMember(member) ? "ring-2 ring-orange-200" : ""}`}
+            >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-lg font-semibold text-neutral-800">{member.name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-lg font-semibold text-neutral-800">{member.name}</p>
+                    {isCurrentUserMember(member) ? (
+                      <span
+                        className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white"
+                        style={{ backgroundColor: accentColor }}
+                      >
+                        You
+                      </span>
+                    ) : null}
+                  </div>
                   <p className="text-sm text-neutral-500">{member.role}</p>
                   <p className="mt-1 text-sm text-neutral-700">{member.email}</p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setInfoMemberId(member.id);
-                      setNote(member.note || "");
-                    }}
-                    className="mt-2 cursor-pointer rounded-lg bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-400"
-                  >
-                    Add information
-                  </button>
-                  {member.role !== "Owner" ? (
-                    <button
-                      type="button"
-                      onClick={() => setOwnerCandidate(member)}
-                      className="mt-2 block cursor-pointer rounded-lg bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-400"
-                    >
-                      Make owner
-                    </button>
+                  {isOwner ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setInfoMemberId(member.id);
+                          setNote(member.note || "");
+                        }}
+                        className="mt-2 cursor-pointer rounded-lg bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-400"
+                      >
+                        Add information
+                      </button>
+                      {member.role !== "Owner" ? (
+                        <button
+                          type="button"
+                          onClick={() => setOwnerCandidate(member)}
+                          className="mt-2 block cursor-pointer rounded-lg bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-400"
+                        >
+                          Make owner
+                        </button>
+                      ) : null}
+                    </>
                   ) : null}
                 </div>
-                {member.role !== "Owner" ? (
+                {member.role !== "Owner" && isOwner ? (
                   <button
                     type="button"
                     onClick={() => void removeMember(member.id)}
