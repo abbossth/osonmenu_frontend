@@ -25,6 +25,7 @@ export type EstablishmentDocument = {
   tripAdvisor?: string;
   googleReviews?: string;
   additionalInfo?: string;
+  ownerNote?: string;
   currency: "UZS" | "USD";
   language: "uz" | "ru" | "en";
   teamMembers?: {
@@ -207,6 +208,7 @@ const establishmentSchema = new Schema<EstablishmentDocument>(
     tripAdvisor: { type: String, default: "", trim: true },
     googleReviews: { type: String, default: "", trim: true },
     additionalInfo: { type: String, default: "Here you can add any additional information about your QR code menu", trim: true },
+    ownerNote: { type: String, default: "", trim: true },
     currency: { type: String, required: true, enum: ["UZS", "USD"] },
     language: { type: String, required: true, enum: ["uz", "ru", "en"] },
     enabledLanguages: { type: [String], default: ["uz", "ru", "en"] },

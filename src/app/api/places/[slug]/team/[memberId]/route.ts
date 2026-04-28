@@ -56,6 +56,13 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     if (!place) return NextResponse.json({ error: "Establishment not found" }, { status: 404 });
 
     const ownerUid = place.ownerId || place.userId;
+    const body = (await request.json()) as { note?: string; makeOwner?: boolean };
+    if (memberId === "owner") {
+      const note = normalizeString(body.note);
+      await collection.updateOne({ _id: place._id }, { $set: { ownerNote: note } });
+      return NextResponse.json({ ok: true });
+    }
+
     const members: PersistedTeamMember[] = Array.isArray(place.teamMembers) ? (place.teamMembers as PersistedTeamMember[]) : [];
     const { normalized: normalizedMembers, changed } = normalizeMembers(members);
     if (changed) {
@@ -74,12 +81,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       (authUser.email && targetMember.email?.toLowerCase() === authUser.email);
     if (!canEdit) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-    const body = (await request.json()) as { note?: string; makeOwner?: boolean };
     if (body.makeOwner) {
-      if (authUser.uid !== ownerUid) {
-        return NextResponse.json({ error: "Only owner can transfer ownership" }, { status: 403 });
-      }
-
       let targetUserId = targetMember.userId || "";
       if (!targetUserId && targetMember.email) {
         try {
@@ -143,12 +145,14 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     const collection = EstablishmentModel.collection;
     const place = await collection.findOne({
       slug,
-      $or: [{ ownerId: authUser.uid }, { userId: authUser.uid }],
+      $or: [
+        { ownerId: authUser.uid },
+        { userId: authUser.uid },
+        { "teamMembers.userId": authUser.uid },
+        ...(authUser.email ? [{ "teamMembers.email": authUser.email }] : []),
+      ],
     }, { sort: { createdAt: 1 } });
-    if (!place) return NextResponse.json({ error: "Only owner can remove members" }, { status: 403 });
-
-    const ownerUid = place.ownerId || place.userId;
-    if (ownerUid !== authUser.uid) return NextResponse.json({ error: "Only owner can remove members" }, { status: 403 });
+    if (!place) return NextResponse.json({ error: "No access to remove members" }, { status: 403 });
 
     const members: PersistedTeamMember[] = Array.isArray(place.teamMembers) ? (place.teamMembers as PersistedTeamMember[]) : [];
     const { normalized: normalizedMembers, changed } = normalizeMembers(members);

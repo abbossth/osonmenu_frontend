@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { normalizeSlug, verifyUserId } from "@/app/api/_utils/menu-builder";
-import { connectToMongoDB } from "@/lib/mongodb";
-import { EstablishmentModel } from "@/models/Establishment";
+import { findUserEstablishment, normalizeSlug, verifyUserId } from "@/app/api/_utils/menu-builder";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -20,11 +18,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
     const body = (await request.json()) as Record<string, unknown>;
 
-    await connectToMongoDB();
-    const place = await EstablishmentModel.findOne({
-      slug,
-      $or: [{ ownerId: userId }, { userId }],
-    });
+    const place = await findUserEstablishment(slug, userId);
     if (!place) return NextResponse.json({ error: "Establishment not found" }, { status: 404 });
 
     place.name = str(body.name, place.name);

@@ -101,7 +101,7 @@ export async function GET(request: NextRequest, { params }: Params) {
           name: typeof place.name === "string" ? place.name : "Owner",
           email: ownerEmail,
           role: "Owner" as const,
-          note: "",
+          note: typeof place.ownerNote === "string" ? place.ownerNote : "",
         },
         ...normalizedMembers.map(toMemberResponse),
       ],
@@ -132,14 +132,14 @@ export async function POST(request: NextRequest, { params }: Params) {
     const collection = EstablishmentModel.collection;
     const place = await collection.findOne({
       slug,
-      $or: [{ ownerId: authUser.uid }, { userId: authUser.uid }],
+      $or: [
+        { ownerId: authUser.uid },
+        { userId: authUser.uid },
+        { "teamMembers.userId": authUser.uid },
+        ...(authUser.email ? [{ "teamMembers.email": authUser.email }] : []),
+      ],
     }, { sort: { createdAt: 1 } });
-    if (!place) return NextResponse.json({ error: "Only owner can add members" }, { status: 403 });
-
-    const ownerUid = place.ownerId || place.userId;
-    if (ownerUid !== authUser.uid) {
-      return NextResponse.json({ error: "Only owner can add members" }, { status: 403 });
-    }
+    if (!place) return NextResponse.json({ error: "No access to add members" }, { status: 403 });
 
     const existingMembers: PersistedTeamMember[] = Array.isArray(place.teamMembers) ? (place.teamMembers as PersistedTeamMember[]) : [];
     const { normalized: normalizedMembers, changed } = normalizeMembers(existingMembers);

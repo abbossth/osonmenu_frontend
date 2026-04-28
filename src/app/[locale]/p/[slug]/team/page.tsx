@@ -25,7 +25,6 @@ export default function TeamPage() {
   const locale = params.locale === "ru" || params.locale === "en" ? params.locale : "uz";
   const [place, setPlace] = useState<MenuPlace | null>(null);
   const [members, setMembers] = useState<TeamMember[]>([]);
-  const [isOwner, setIsOwner] = useState(false);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
   const [infoMemberId, setInfoMemberId] = useState<string | null>(null);
@@ -55,8 +54,7 @@ export default function TeamPage() {
           if (menuData.place) setPlace(menuData.place);
         }
         if (teamRes.ok) {
-          const teamData = (await teamRes.json()) as { isOwner?: boolean; members?: TeamMember[] };
-          setIsOwner(Boolean(teamData.isOwner));
+          const teamData = (await teamRes.json()) as { members?: TeamMember[] };
           setMembers(Array.isArray(teamData.members) ? teamData.members : []);
         }
       } finally {
@@ -70,7 +68,7 @@ export default function TeamPage() {
   const infoMember = members.find((m) => m.id === infoMemberId) ?? null;
 
   async function addMember() {
-    if (!firebaseUser || !isOwner) return;
+    if (!firebaseUser) return;
     if (!newName.trim() || !newEmail.trim()) return;
     setActionError(null);
     try {
@@ -127,7 +125,7 @@ export default function TeamPage() {
   }
 
   async function removeMember(memberId: string) {
-    if (!firebaseUser || !isOwner) return;
+    if (!firebaseUser) return;
     setActionError(null);
     try {
       const token = await firebaseUser.getIdToken();
@@ -147,7 +145,7 @@ export default function TeamPage() {
   }
 
   async function makeOwner(member: TeamMember) {
-    if (!firebaseUser || !isOwner || member.role === "Owner") return;
+    if (!firebaseUser || member.role === "Owner") return;
     setActionError(null);
     try {
       const token = await firebaseUser.getIdToken();
@@ -197,10 +195,9 @@ export default function TeamPage() {
           </button>
           <button
             type="button"
-            onClick={() => (isOwner ? setAddOpen(true) : null)}
-            disabled={!isOwner}
+            onClick={() => setAddOpen(true)}
             className="cursor-pointer rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
-            style={{ backgroundColor: isOwner ? accentColor : "#bdbdbd" }}
+            style={{ backgroundColor: accentColor }}
           >
             Add employee +
           </button>
@@ -217,29 +214,27 @@ export default function TeamPage() {
                   <p className="text-lg font-semibold text-neutral-800">{member.name}</p>
                   <p className="text-sm text-neutral-500">{member.role}</p>
                   <p className="mt-1 text-sm text-neutral-700">{member.email}</p>
-                  {member.role !== "Owner" && isOwner ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setInfoMemberId(member.id);
-                          setNote(member.note || "");
-                        }}
-                        className="mt-2 cursor-pointer rounded-lg bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-400"
-                      >
-                        Add information
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setOwnerCandidate(member)}
-                        className="mt-2 block cursor-pointer rounded-lg bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-400"
-                      >
-                        Make owner
-                      </button>
-                    </>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInfoMemberId(member.id);
+                      setNote(member.note || "");
+                    }}
+                    className="mt-2 cursor-pointer rounded-lg bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-400"
+                  >
+                    Add information
+                  </button>
+                  {member.role !== "Owner" ? (
+                    <button
+                      type="button"
+                      onClick={() => setOwnerCandidate(member)}
+                      className="mt-2 block cursor-pointer rounded-lg bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-400"
+                    >
+                      Make owner
+                    </button>
                   ) : null}
                 </div>
-                {member.role !== "Owner" && isOwner ? (
+                {member.role !== "Owner" ? (
                   <button
                     type="button"
                     onClick={() => void removeMember(member.id)}
