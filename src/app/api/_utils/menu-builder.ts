@@ -69,7 +69,10 @@ export async function findUserEstablishment(slug: string, userId: string) {
     const authUser = await getAdminAuth().getUser(userId);
     const email = authUser.email?.toLowerCase();
     if (!email) return null;
-    return EstablishmentModel.findOne({ slug, "teamMembers.email": email }).sort({ createdAt: 1 });
+    return EstablishmentModel.findOne({
+      slug,
+      "teamMembers.email": { $regex: `^${email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, $options: "i" },
+    }).sort({ createdAt: 1 });
   } catch {
     return null;
   }

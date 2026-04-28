@@ -142,6 +142,24 @@ export default function CategoryItemsPage() {
     void load();
   }, [firebaseUser, slug]);
 
+  useEffect(() => {
+    async function verifyEditAccess() {
+      if (!firebaseUser || !slug) return;
+      try {
+        const token = await firebaseUser.getIdToken();
+        const res = await fetch(`/api/places/${slug}/team`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          setCanEdit(true);
+        }
+      } catch {
+        // keep current permission state
+      }
+    }
+    void verifyEditAccess();
+  }, [firebaseUser, slug]);
+
   async function authorizedFetch(input: string, init: RequestInit = {}) {
     if (!firebaseUser || !isAdminMode) throw new Error("Unauthorized");
     const token = await firebaseUser.getIdToken();

@@ -382,9 +382,16 @@
     },
     "places": {
       "title": "Establishments",
+      "titleOwn": "My establishments",
+      "titleShared": "Shared establishments",
       "add": "Add Establishment",
       "empty": "No establishments yet. Create your first place.",
+      "emptyShared": "No shared establishments yet.",
       "loading": "Loading establishments...",
+      "tabs": {
+        "own": "My",
+        "shared": "Shared"
+      },
       "modal": {
         "title": "Add Establishment",
         "save": "Create",

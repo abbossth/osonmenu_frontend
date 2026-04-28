@@ -34,6 +34,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<ProfileTab>("places");
   const [places, setPlaces] = useState<Place[]>([]);
+  const [placesScope, setPlacesScope] = useState<"own" | "shared">("own");
   const [allSlugs, setAllSlugs] = useState<string[]>([]);
   const [placesLoading, setPlacesLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -41,6 +42,15 @@ export default function ProfilePage() {
 
   const domain = typeof window === "undefined" ? "yourdomain.com" : window.location.host;
   const existingSlugs = useMemo(() => allSlugs, [allSlugs]);
+  const ownPlaces = useMemo(() => {
+    if (!firebaseUser?.uid) return [];
+    return places.filter((place) => (place.ownerId || place.userId) === firebaseUser.uid);
+  }, [firebaseUser?.uid, places]);
+  const sharedPlaces = useMemo(() => {
+    if (!firebaseUser?.uid) return places;
+    return places.filter((place) => (place.ownerId || place.userId) !== firebaseUser.uid);
+  }, [firebaseUser?.uid, places]);
+  const scopedPlaces = placesScope === "own" ? ownPlaces : sharedPlaces;
   const fallbackProfileUser = useMemo<AppUser | null>(() => {
     if (appUser) return appUser;
     if (!firebaseUser?.uid || !firebaseUser.email) return null;
@@ -223,21 +233,48 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 ) : (
-                  <PlacesList
-                    title={t("places.title")}
-                    addButton={t("places.add")}
-                    emptyText={t("places.empty")}
-                    places={places}
-                    onAddClick={() => setModalOpen(true)}
-                    labels={{
-                      url: t("establishment.url"),
-                      currency: t("establishment.currency"),
-                      language: t("establishment.language"),
-                      createdAt: t("establishment.createdAt"),
-                      editMenu: t("establishment.editMenu"),
-                    }}
-                    domain={domain}
-                  />
+                  <div className="space-y-4">
+                    <div className="inline-flex rounded-full border border-neutral-200 bg-white p-1 dark:border-neutral-800 dark:bg-neutral-900">
+                      <button
+                        type="button"
+                        onClick={() => setPlacesScope("own")}
+                        className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+                          placesScope === "own"
+                            ? "bg-orange-500 text-white"
+                            : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                        }`}
+                      >
+                        {t("places.tabs.own")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPlacesScope("shared")}
+                        className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+                          placesScope === "shared"
+                            ? "bg-orange-500 text-white"
+                            : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                        }`}
+                      >
+                        {t("places.tabs.shared")}
+                      </button>
+                    </div>
+                    <PlacesList
+                      title={placesScope === "own" ? t("places.titleOwn") : t("places.titleShared")}
+                      addButton={t("places.add")}
+                      emptyText={placesScope === "own" ? t("places.empty") : t("places.emptyShared")}
+                      places={scopedPlaces}
+                      onAddClick={() => setModalOpen(true)}
+                      showAddButton={placesScope === "own"}
+                      labels={{
+                        url: t("establishment.url"),
+                        currency: t("establishment.currency"),
+                        language: t("establishment.language"),
+                        createdAt: t("establishment.createdAt"),
+                        editMenu: t("establishment.editMenu"),
+                      }}
+                      domain={domain}
+                    />
+                  </div>
                 )
               ) : (
                 <div className="space-y-4">

@@ -96,11 +96,17 @@ export async function GET(request: NextRequest) {
     }
 
     const places = await EstablishmentModel.find({
-      $or: [{ ownerId: decoded.uid }, { userId: decoded.uid }],
+      $or: [
+        { ownerId: decoded.uid },
+        { userId: decoded.uid },
+        { "teamMembers.userId": decoded.uid },
+        ...(decoded.email ? [{ "teamMembers.email": decoded.email.toLowerCase() }] : []),
+      ],
     })
       .sort({ createdAt: -1 })
       .lean();
-    return NextResponse.json({ places: places.map(serialize) });
+    const uniquePlaces = Array.from(new Map(places.map((place) => [String(place._id), place])).values());
+    return NextResponse.json({ places: uniquePlaces.map(serialize) });
   } catch (error) {
     console.error("[API /api/places GET] Failed to fetch places", error);
     return NextResponse.json({ error: "Failed to fetch places" }, { status: 500 });

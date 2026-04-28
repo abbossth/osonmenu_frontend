@@ -176,7 +176,22 @@ export async function GET(request: NextRequest, { params }: Params) {
     if (!slug) return NextResponse.json({ error: "Invalid slug" }, { status: 400 });
 
     await connectToMongoDB();
-    const establishment = await EstablishmentModel.findOne({ slug }).sort({ createdAt: 1 });
+    const candidates = await EstablishmentModel.find({ slug }).sort({ createdAt: 1 });
+    const establishment =
+      authUser
+        ? candidates.find((entry) => {
+            const ownerId = entry.ownerId || entry.userId;
+            if (ownerId === authUser.uid) return true;
+            const members = Array.isArray(entry.teamMembers)
+              ? (entry.teamMembers as Array<{ userId?: string; email?: string }>)
+              : [];
+            return members.some((member) => {
+              const memberUserId = typeof member.userId === "string" ? member.userId : "";
+              const memberEmail = typeof member.email === "string" ? member.email.toLowerCase() : "";
+              return memberUserId === authUser.uid || (authUser.email && memberEmail === authUser.email);
+            });
+          }) ?? candidates[0]
+        : candidates[0];
     if (!establishment) return NextResponse.json({ error: "Establishment not found" }, { status: 404 });
 
     const ownerId = establishment.ownerId || establishment.userId;

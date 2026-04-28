@@ -382,9 +382,16 @@
     },
     "places": {
       "title": "Muassasalar",
+      "titleOwn": "Mening muassasalarim",
+      "titleShared": "Ulashilgan muassasalar",
       "add": "Muassasa qo'shish",
       "empty": "Hali muassasa yo'q. Birinchisini yarating.",
+      "emptyShared": "Hali sizga ulashilgan muassasa yo'q.",
       "loading": "Muassasalar yuklanmoqda...",
+      "tabs": {
+        "own": "Mening",
+        "shared": "Ulashilgan"
+      },
       "modal": {
         "title": "Muassasa qo'shish",
         "save": "Yaratish",
