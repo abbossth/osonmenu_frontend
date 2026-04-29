@@ -6,6 +6,8 @@ import { BottomNav } from "@/components/MenuUI/BottomNav";
 import { HeaderUserBadge } from "@/components/MenuUI/HeaderUserBadge";
 import { useAuth } from "@/components/providers/auth-provider";
 import type { MenuPlace } from "@/components/MenuBuilder/types";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowLeft, faXmark } from "@fortawesome/free-solid-svg-icons";
 
 type MenuResponse = { place?: MenuPlace };
 
@@ -45,7 +47,7 @@ export default function HelpPage() {
             onClick={() => router.push(`/${locale}/p/${slug}/more`)}
             className="cursor-pointer text-2xl leading-none text-neutral-700"
           >
-            ×
+            <FontAwesomeIcon icon={faXmark} className="text-base" />
           </button>
           <p className="text-sm font-semibold tracking-wide text-neutral-700">{place?.name ?? "Restaurant"}</p>
           <HeaderUserBadge firebaseUser={firebaseUser} ownerId={place?.ownerId} accentColor={accentColor} />
@@ -56,7 +58,7 @@ export default function HelpPage() {
           onClick={() => router.push(`/${locale}/p/${slug}/more`)}
           className="mt-5 inline-flex cursor-pointer items-center gap-2 text-3xl font-semibold text-neutral-800"
         >
-          <span aria-hidden>←</span>
+          <FontAwesomeIcon icon={faArrowLeft} className="text-xl" />
           <span>Help</span>
         </button>
 

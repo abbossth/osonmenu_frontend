@@ -7,6 +7,8 @@ import { BottomNav } from "@/components/MenuUI/BottomNav";
 import { HeaderUserBadge } from "@/components/MenuUI/HeaderUserBadge";
 import { useAuth } from "@/components/providers/auth-provider";
 import type { MenuPlace } from "@/components/MenuBuilder/types";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBarsStaggered, faCircleDot, faGlobe, faTag, faXmark } from "@fortawesome/free-solid-svg-icons";
 
 type MenuResponse = { place?: MenuPlace };
 
@@ -39,10 +41,10 @@ export default function ComponentsPage() {
   const accentColor = place?.color?.trim() || "#f7906c";
 
   const cards = [
-    { id: "addons", title: t("sections.addons"), icon: "☰" },
-    { id: "visibility", title: t("sections.visibility"), icon: "◉" },
-    { id: "locales", title: t("sections.locales"), icon: "文" },
-    { id: "scheduled-prices", title: t("sections.scheduledPrices"), icon: "🗓" },
+    { id: "addons", title: t("sections.addons"), icon: faBarsStaggered },
+    { id: "visibility", title: t("sections.visibility"), icon: faCircleDot },
+    { id: "locales", title: t("sections.locales"), icon: faGlobe },
+    { id: "scheduled-prices", title: t("sections.scheduledPrices"), icon: faTag },
   ];
 
   return (
@@ -54,7 +56,7 @@ export default function ComponentsPage() {
             onClick={() => router.push(`/${locale}/p/${slug}`)}
             className="cursor-pointer text-2xl leading-none text-neutral-700"
           >
-            ×
+            <FontAwesomeIcon icon={faXmark} className="text-base" />
           </button>
           <p className="text-sm font-semibold tracking-wide text-neutral-700">{place?.name ?? "Restaurant"}</p>
           <HeaderUserBadge firebaseUser={firebaseUser} ownerId={place?.ownerId} accentColor={accentColor} />
@@ -70,7 +72,9 @@ export default function ComponentsPage() {
               onClick={() => router.push(`/${locale}/p/${slug}/components/${card.id}`)}
               className="cursor-pointer rounded-2xl bg-white px-4 py-5 text-left shadow-sm transition hover:shadow"
             >
-              <div className="text-lg text-neutral-500">{card.icon}</div>
+              <div className="text-lg text-neutral-500">
+                <FontAwesomeIcon icon={card.icon} />
+              </div>
               <p className="mt-2 text-xl font-semibold text-neutral-800">{card.title}</p>
             </button>
           ))}

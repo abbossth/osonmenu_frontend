@@ -151,7 +151,7 @@ export function AddPlaceModal({ open, onClose, onCreate, existingSlugs, labels }
             exit={{ opacity: 0, y: 14, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 300, damping: 28 }}
             onClick={(event) => event.stopPropagation()}
-            className="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
+            className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-6 shadow-2xl dark:border-neutral-800 dark:bg-neutral-900"
           >
             <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">{labels.title}</h3>
             <form onSubmit={submit} className="mt-4 space-y-4">
@@ -168,12 +168,12 @@ export function AddPlaceModal({ open, onClose, onCreate, existingSlugs, labels }
                     }
                     if (slugError) setSlugError(null);
                   }}
-                  className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                  className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
                 />
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-neutral-700 dark:text-neutral-300">{labels.slug}</label>
-                <div className="flex items-center rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-white">
+                <div className="flex items-center rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-white">
                   <span className="mr-2 text-neutral-500 dark:text-neutral-400">{labels.urlPrefix}</span>
                   <input
                     value={slug}
@@ -193,7 +193,7 @@ export function AddPlaceModal({ open, onClose, onCreate, existingSlugs, labels }
                   <select
                     value={currency}
                     onChange={(event) => setCurrency(event.target.value as "UZS" | "USD")}
-                    className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                    className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
                   >
                     <option value="UZS">UZS</option>
                     <option value="USD">USD</option>
@@ -204,7 +204,7 @@ export function AddPlaceModal({ open, onClose, onCreate, existingSlugs, labels }
                   <select
                     value={language}
                     onChange={(event) => setLanguage(event.target.value as "uz" | "ru" | "en")}
-                    className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                    className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
                   >
                     <option value="uz">Uzbek</option>
                     <option value="ru">Russian</option>
@@ -220,14 +220,14 @@ export function AddPlaceModal({ open, onClose, onCreate, existingSlugs, labels }
                 <button
                   type="button"
                   onClick={onClose}
-                  className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                  className="rounded-full border border-neutral-300 px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
                 >
                   {labels.cancel}
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="rounded-full bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-400 disabled:opacity-60"
+                  className="rounded-full bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-400 disabled:opacity-60"
                 >
                   {loading ? "..." : labels.save}
                 </button>

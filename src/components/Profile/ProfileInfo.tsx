@@ -91,7 +91,7 @@ export function ProfileInfo({
   }
 
   return (
-    <section className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+    <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
       <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">{title}</h3>
 
       <form onSubmit={handleSubmit} className="mt-5 space-y-4">
@@ -102,7 +102,7 @@ export function ProfileInfo({
               value={firstName}
               onChange={(event) => setFirstName(event.target.value)}
               onBlur={() => setTouched((prev) => ({ ...prev, firstName: true }))}
-              className={`w-full rounded-xl border bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:ring-2 dark:bg-neutral-900 dark:text-white ${
+              className={`w-full rounded-xl border bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition focus:ring-2 dark:bg-neutral-900 dark:text-white ${
                 firstNameError
                   ? "border-red-400 focus:border-red-500 focus:ring-red-500/20 dark:border-red-500"
                   : "border-neutral-300 focus:border-orange-500 focus:ring-orange-500/20 dark:border-neutral-700"
@@ -116,7 +116,7 @@ export function ProfileInfo({
               value={lastName}
               onChange={(event) => setLastName(event.target.value)}
               onBlur={() => setTouched((prev) => ({ ...prev, lastName: true }))}
-              className={`w-full rounded-xl border bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:ring-2 dark:bg-neutral-900 dark:text-white ${
+              className={`w-full rounded-xl border bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition focus:ring-2 dark:bg-neutral-900 dark:text-white ${
                 lastNameError
                   ? "border-red-400 focus:border-red-500 focus:ring-red-500/20 dark:border-red-500"
                   : "border-neutral-300 focus:border-orange-500 focus:ring-orange-500/20 dark:border-neutral-700"
@@ -131,7 +131,7 @@ export function ProfileInfo({
           <input
             value={user?.email ?? "-"}
             disabled
-            className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+            className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
           />
         </div>
 
@@ -142,7 +142,7 @@ export function ProfileInfo({
         <button
           type="submit"
           disabled={!dirty || invalid || saving}
-          className="inline-flex rounded-full bg-orange-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {saving ? "..." : saveLabel}
         </button>

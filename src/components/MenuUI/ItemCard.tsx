@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowDown, faArrowUp, faPen, faTrashCan, faXmark } from "@fortawesome/free-solid-svg-icons";
 
 type MenuBadge = "popular" | "new" | null;
 
@@ -81,10 +83,10 @@ export function ItemCard({
                   isLight ? "border border-black/10 bg-white/85 text-neutral-800" : "border border-white/20 bg-black/70 text-white"
                 }`}
               >
-                <button type="button" onClick={() => onMoveUp?.(id)}>⇧</button>
-                <button type="button" onClick={() => onMoveDown?.(id)}>⇩</button>
-                <button type="button" onClick={() => onEdit?.(id)}>✎</button>
-                <button type="button" onClick={() => onDelete?.(id)}>🗑</button>
+                <button type="button" onClick={() => onMoveUp?.(id)}><FontAwesomeIcon icon={faArrowUp} /></button>
+                <button type="button" onClick={() => onMoveDown?.(id)}><FontAwesomeIcon icon={faArrowDown} /></button>
+                <button type="button" onClick={() => onEdit?.(id)}><FontAwesomeIcon icon={faPen} /></button>
+                <button type="button" onClick={() => onDelete?.(id)}><FontAwesomeIcon icon={faTrashCan} /></button>
               </div>
             ) : null}
           </div>
@@ -104,10 +106,10 @@ export function ItemCard({
                 isLight ? "border border-black/10 bg-neutral-100 text-neutral-800" : "border border-white/20 bg-black/40 text-white"
               }`}
             >
-              <button type="button" onClick={() => onMoveUp?.(id)}>⇧</button>
-              <button type="button" onClick={() => onMoveDown?.(id)}>⇩</button>
-              <button type="button" onClick={() => onEdit?.(id)}>✎</button>
-              <button type="button" onClick={() => onDelete?.(id)}>🗑</button>
+              <button type="button" onClick={() => onMoveUp?.(id)}><FontAwesomeIcon icon={faArrowUp} /></button>
+              <button type="button" onClick={() => onMoveDown?.(id)}><FontAwesomeIcon icon={faArrowDown} /></button>
+              <button type="button" onClick={() => onEdit?.(id)}><FontAwesomeIcon icon={faPen} /></button>
+              <button type="button" onClick={() => onDelete?.(id)}><FontAwesomeIcon icon={faTrashCan} /></button>
             </div>
           ) : null}
           <h4 className={`text-lg font-semibold ${isLight ? "text-neutral-900" : "text-white"}`}>{name}</h4>
@@ -136,7 +138,7 @@ export function ItemCard({
             className="absolute right-4 top-4 z-[121] h-10 w-10 rounded-full bg-black/70 text-xl text-white"
             aria-label="Close image preview"
           >
-            ×
+            <FontAwesomeIcon icon={faXmark} />
           </button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img

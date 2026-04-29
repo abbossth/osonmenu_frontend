@@ -1,6 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowDown, faArrowUp, faPen, faTrashCan } from "@fortawesome/free-solid-svg-icons";
 
 type CategoryCardProps = {
   id: string;
@@ -62,10 +64,18 @@ export function CategoryCard({
         </div>
         {isAdmin ? (
           <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2 py-1 text-xs text-white backdrop-blur">
-            <button type="button" onClick={(event) => { event.stopPropagation(); onMoveUp?.(id); }}>⇧</button>
-            <button type="button" onClick={(event) => { event.stopPropagation(); onMoveDown?.(id); }}>⇩</button>
-            <button type="button" onClick={(event) => { event.stopPropagation(); onEdit?.(id); }}>✎</button>
-            <button type="button" onClick={(event) => { event.stopPropagation(); onDelete?.(id); }}>🗑</button>
+            <button type="button" onClick={(event) => { event.stopPropagation(); onMoveUp?.(id); }}>
+              <FontAwesomeIcon icon={faArrowUp} />
+            </button>
+            <button type="button" onClick={(event) => { event.stopPropagation(); onMoveDown?.(id); }}>
+              <FontAwesomeIcon icon={faArrowDown} />
+            </button>
+            <button type="button" onClick={(event) => { event.stopPropagation(); onEdit?.(id); }}>
+              <FontAwesomeIcon icon={faPen} />
+            </button>
+            <button type="button" onClick={(event) => { event.stopPropagation(); onDelete?.(id); }}>
+              <FontAwesomeIcon icon={faTrashCan} />
+            </button>
           </div>
         ) : null}
       </motion.div>

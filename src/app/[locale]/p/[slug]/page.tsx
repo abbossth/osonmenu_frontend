@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFacebookF, faInstagram, faTiktok, faXTwitter } from "@fortawesome/free-brands-svg-icons";
-import { faCompass, faLocationDot, faStar } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft, faCompass, faLocationDot, faMagnifyingGlass, faMapLocationDot, faPenToSquare, faPhone, faStar, faWifi, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { AddItemModal } from "@/components/MenuBuilder/AddItemModal";
 import { CategoryList } from "@/components/MenuUI/CategoryList";
 import { BottomNav } from "@/components/MenuUI/BottomNav";
@@ -40,6 +40,7 @@ type EstablishmentFormState = {
   city: string;
   address: string;
   googleMapsLink: string;
+  yandexMapsLink: string;
   instagram: string;
   facebook: string;
   tiktok: string;
@@ -151,6 +152,7 @@ export default function PublicMenuPage() {
     city: "",
     address: "",
     googleMapsLink: "",
+    yandexMapsLink: "",
     instagram: "",
     facebook: "",
     tiktok: "",
@@ -185,6 +187,20 @@ export default function PublicMenuPage() {
       : preferredActiveMenu?.id ?? null;
   const activeMenu = orderedMenus.find((menu) => menu.id === resolvedActiveMenuId) ?? null;
   const activeMenuCategories = activeMenu?.categories ?? [];
+  const filteredActiveMenuCategories = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return activeMenuCategories;
+    return activeMenuCategories.filter((category) => {
+      const categoryName = pickLocalized(category.nameI18n, category.name).toLowerCase();
+      const categoryDescription = (category.description ?? "").toLowerCase();
+      const itemMatches = category.items.some((item) => {
+        const itemName = pickLocalized(item.nameI18n, item.name).toLowerCase();
+        const itemDescription = pickLocalized(item.descriptionI18n, item.description).toLowerCase();
+        return itemName.includes(query) || itemDescription.includes(query);
+      });
+      return categoryName.includes(query) || categoryDescription.includes(query) || itemMatches;
+    });
+  }, [activeMenuCategories, searchQuery, locale]);
   const resolvedActiveCategoryId =
     activeCategoryId && activeMenuCategories.some((category) => category._id === activeCategoryId)
       ? activeCategoryId
@@ -193,7 +209,16 @@ export default function PublicMenuPage() {
   const isAdminMode = canEdit;
   const isLightTheme = (place?.colorTheme ?? "light") === "light";
   const accentColor = place?.color?.trim() || "#f7906c";
-  const detailsLine = [place?.phone, place?.address].filter(Boolean).join("  •  ");
+  const address = place?.address?.trim() ?? "";
+  const city = place?.city?.trim() ?? "";
+  const country = place?.country?.trim() ?? "";
+  const phone = place?.phone?.trim() ?? "";
+  const wifiPassword = place?.wifiPassword?.trim() ?? "";
+  const locationLine = [address, city, country].filter(Boolean).join(", ");
+  const mapLinks = [
+    { label: "Google Maps", icon: faMapLocationDot, value: place?.googleMapsLink?.trim() ?? "" },
+    { label: "Yandex Maps", icon: faLocationDot, value: place?.yandexMapsLink?.trim() ?? "" },
+  ].filter((entry) => entry.value.length > 0);
   const socialLinks = [
     { label: "Instagram", icon: faInstagram, value: place?.instagram ?? "" },
     { label: "Facebook", icon: faFacebookF, value: place?.facebook ?? "" },
@@ -578,6 +603,7 @@ export default function PublicMenuPage() {
       city: place.city ?? "",
       address: place.address ?? "",
       googleMapsLink: place.googleMapsLink ?? "",
+      yandexMapsLink: place.yandexMapsLink ?? "",
       instagram: place.instagram ?? "",
       facebook: place.facebook ?? "",
       tiktok: place.tiktok ?? "",
@@ -794,7 +820,7 @@ export default function PublicMenuPage() {
                 onClick={() => router.push("/admin/places")}
                 className="absolute left-3 top-3 z-30 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-2xl text-neutral-900 shadow"
               >
-                ×
+                <FontAwesomeIcon icon={faXmark} className="text-base" />
               </button>
             ) : null}
             {place?.logoUrl ? (
@@ -820,26 +846,51 @@ export default function PublicMenuPage() {
                   onClick={openEstablishmentEditor}
                   className="text-neutral-500 transition hover:text-neutral-200"
                 >
-                  ✎
+                  <FontAwesomeIcon icon={faPenToSquare} />
                 </button>
               ) : null}
             </div>
-            <p className={`mt-2 text-sm ${isLightTheme ? "text-neutral-600" : "text-neutral-400"}`}>
-              ◉ {place?.city || "Awesome City"}, {place?.country || "The Best Country"}   〰 {place?.wifiPassword || "CoolWiFiPassword"}
-            </p>
-            {detailsLine ? <p className={`mt-1 text-xs ${isLightTheme ? "text-neutral-500" : "text-neutral-400"}`}>{detailsLine}</p> : null}
-            {place?.googleMapsLink?.trim() ? (
-              <a
-                href={toExternalUrl(place.googleMapsLink)}
-                target="_blank"
-                rel="noreferrer noopener"
-                className={`mt-1 inline-flex items-center gap-1 text-xs underline-offset-2 hover:underline ${
-                  isLightTheme ? "text-neutral-700" : "text-neutral-300"
-                }`}
-              >
-                <FontAwesomeIcon icon={faLocationDot} />
-                <span>Show on map</span>
-              </a>
+            {locationLine || phone || wifiPassword ? (
+              <div className={`mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm ${isLightTheme ? "text-neutral-600" : "text-neutral-400"}`}>
+                {locationLine ? (
+                  <p className="inline-flex items-center gap-1.5">
+                    <FontAwesomeIcon icon={faLocationDot} className="text-xs" />
+                    <span>{locationLine}</span>
+                  </p>
+                ) : null}
+                {phone ? (
+                  <p className="inline-flex items-center gap-1.5">
+                    <FontAwesomeIcon icon={faPhone} className="text-xs" />
+                    <span>{phone}</span>
+                  </p>
+                ) : null}
+                {wifiPassword ? (
+                  <p className="inline-flex items-center gap-1.5">
+                    <FontAwesomeIcon icon={faWifi} className="text-xs" />
+                    <span>{wifiPassword}</span>
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+            {mapLinks.length ? (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {mapLinks.map((entry) => (
+                  <a
+                    key={entry.label}
+                    href={toExternalUrl(entry.value)}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition ${
+                      isLightTheme
+                        ? "border-neutral-200 text-neutral-700 hover:bg-neutral-100"
+                        : "border-white/15 text-neutral-300 hover:bg-white/10"
+                    }`}
+                  >
+                    <FontAwesomeIcon icon={entry.icon} />
+                    <span>{entry.label}</span>
+                  </a>
+                ))}
+              </div>
             ) : null}
             {socialLinks.length ? (
               <div className="mt-2 flex flex-wrap gap-2">
@@ -893,7 +944,7 @@ export default function PublicMenuPage() {
                 className={`w-full bg-transparent text-base outline-none ${isLightTheme ? "text-neutral-700" : "text-neutral-200"}`}
               />
               <span className={`grid h-8 w-8 place-items-center rounded-full text-lg ${isLightTheme ? "border border-neutral-300 bg-white text-neutral-500" : "border border-white/10 bg-black/40 text-neutral-400"}`}>
-                ⌕
+                <FontAwesomeIcon icon={faMagnifyingGlass} className="text-sm" />
               </span>
             </div>
 
@@ -913,7 +964,7 @@ export default function PublicMenuPage() {
 
             <div className={`mt-4 space-y-5 ${isAdminMode ? "pb-20" : "pb-4"}`}>
               <CategoryList
-                categories={activeMenuCategories.map((category) => ({
+                categories={filteredActiveMenuCategories.map((category) => ({
                   id: category._id,
                   name: pickLocalized(category.nameI18n, category.name),
                   imageUrl: category.imageUrl,
@@ -934,6 +985,15 @@ export default function PublicMenuPage() {
                 onAddUnder={() => openCreateCategoryModal()}
                 onSelect={handleCategorySelect}
               />
+              {filteredActiveMenuCategories.length === 0 ? (
+                <div
+                  className={`w-full rounded-2xl border border-dashed p-6 text-center text-sm ${
+                    isLightTheme ? "border-neutral-300 text-neutral-500" : "border-white/20 text-neutral-400"
+                  }`}
+                >
+                  No categories found
+                </div>
+              ) : null}
 
             </div>
           </div>
@@ -1377,6 +1437,14 @@ export default function PublicMenuPage() {
                 <input
                   value={establishmentForm.googleMapsLink}
                   onChange={(e) => setEstablishmentForm((c) => ({ ...c, googleMapsLink: e.target.value }))}
+                  className="w-full rounded-xl bg-neutral-100 px-3 py-2.5 text-sm text-neutral-800 outline-none dark:bg-neutral-800 dark:text-neutral-100"
+                />
+              </label>
+              <label className="sm:col-span-2">
+                <span className="mb-1 block text-sm text-neutral-500 dark:text-neutral-400">Yandex Maps link</span>
+                <input
+                  value={establishmentForm.yandexMapsLink}
+                  onChange={(e) => setEstablishmentForm((c) => ({ ...c, yandexMapsLink: e.target.value }))}
                   className="w-full rounded-xl bg-neutral-100 px-3 py-2.5 text-sm text-neutral-800 outline-none dark:bg-neutral-800 dark:text-neutral-100"
                 />
               </label>

@@ -1,6 +1,8 @@
 "use client";
 
 import { Place, PlaceCard } from "./PlaceCard";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCirclePlus } from "@fortawesome/free-solid-svg-icons";
 
 type PlacesListProps = {
   title: string;
@@ -54,13 +56,10 @@ export function PlacesList({
           <button
             type="button"
             onClick={onAddClick}
-            className="flex flex-col items-center justify-center rounded-xl border border-neutral-200 bg-white p-5 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900"
+            className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-white p-5 text-center shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-md dark:border-neutral-700 dark:bg-neutral-900"
           >
-            <div className="grid h-10 w-10 place-items-center rounded-lg bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-300">
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <rect x="4" y="3" width="12" height="16" rx="2" />
-                <path d="M8 7h4M8 11h4M18 15v6M15 18h6" />
-              </svg>
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-300">
+              <FontAwesomeIcon icon={faCirclePlus} className="text-lg" />
             </div>
             <p className="mt-3 text-lg font-semibold text-neutral-700 dark:text-neutral-200">{addButton}</p>
           </button>

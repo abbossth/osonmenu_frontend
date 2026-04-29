@@ -8,6 +8,8 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Link } from "@/i18n/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/components/providers/auth-provider";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBars, faXmark } from "@fortawesome/free-solid-svg-icons";
 
 const anchors = [
   { key: "features", hash: "#features" },
@@ -104,7 +106,7 @@ export function Navbar() {
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
           >
-            <span className="text-base leading-none">{mobileOpen ? "×" : "☰"}</span>
+            <FontAwesomeIcon icon={mobileOpen ? faXmark : faBars} className="text-sm" />
           </button>
         </div>
       </div>

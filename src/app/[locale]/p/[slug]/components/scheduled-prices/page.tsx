@@ -7,6 +7,8 @@ import { BottomNav } from "@/components/MenuUI/BottomNav";
 import { HeaderUserBadge } from "@/components/MenuUI/HeaderUserBadge";
 import { useAuth } from "@/components/providers/auth-provider";
 import type { MenuPlace, MenuScheduledPrice } from "@/components/MenuBuilder/types";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 
 type MenuResponse = { place?: MenuPlace };
 
@@ -87,7 +89,7 @@ export default function ComponentsScheduledPricesPage() {
             onClick={() => router.push(`/${locale}/p/${slug}/components`)}
             className="cursor-pointer text-2xl leading-none text-neutral-700"
           >
-            ←
+            <FontAwesomeIcon icon={faArrowLeft} className="text-base" />
           </button>
           <p className="text-sm font-semibold tracking-wide text-neutral-700">{place?.name ?? "Restaurant"}</p>
           <HeaderUserBadge firebaseUser={firebaseUser} ownerId={place?.ownerId} accentColor={accentColor} />

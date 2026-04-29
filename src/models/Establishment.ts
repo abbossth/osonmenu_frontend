@@ -18,6 +18,7 @@ export type EstablishmentDocument = {
   city?: string;
   address?: string;
   googleMapsLink?: string;
+  yandexMapsLink?: string;
   instagram?: string;
   facebook?: string;
   tiktok?: string;
@@ -193,14 +194,15 @@ const establishmentSchema = new Schema<EstablishmentDocument>(
     currencySymbol: { type: String, default: "" },
     logoUrl: { type: String, default: "" },
     backgroundImage: { type: String, default: "" },
-    wifiPassword: { type: String, default: "CoolWiFiPassword" },
+    wifiPassword: { type: String, default: "", trim: true },
     phone: { type: String, default: "" },
     guestsCanOrder: { type: Boolean, default: true },
     hideMenuButtons: { type: Boolean, default: false },
-    country: { type: String, default: "The Best Country", trim: true },
-    city: { type: String, default: "Awesome City", trim: true },
+    country: { type: String, default: "", trim: true },
+    city: { type: String, default: "", trim: true },
     address: { type: String, default: "", trim: true },
     googleMapsLink: { type: String, default: "", trim: true },
+    yandexMapsLink: { type: String, default: "", trim: true },
     instagram: { type: String, default: "", trim: true },
     facebook: { type: String, default: "", trim: true },
     tiktok: { type: String, default: "", trim: true },

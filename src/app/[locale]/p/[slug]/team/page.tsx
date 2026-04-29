@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { BottomNav } from "@/components/MenuUI/BottomNav";
 import { useAuth } from "@/components/providers/auth-provider";
 import type { MenuPlace } from "@/components/MenuBuilder/types";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowLeft, faTrash, faXmark } from "@fortawesome/free-solid-svg-icons";
 
 type MenuResponse = { place?: MenuPlace };
 
@@ -210,7 +212,7 @@ export default function TeamPage() {
             onClick={() => router.push(`/${locale}/p/${slug}/more`)}
             className="cursor-pointer text-2xl leading-none text-neutral-700"
           >
-            ×
+            <FontAwesomeIcon icon={faXmark} className="text-base" />
           </button>
           <p className="text-sm font-semibold tracking-wide text-neutral-700">{place?.name ?? "Restaurant"}</p>
           <div className="flex items-center gap-2">
@@ -230,7 +232,7 @@ export default function TeamPage() {
             onClick={() => router.push(`/${locale}/p/${slug}/more`)}
             className="inline-flex cursor-pointer items-center gap-2 text-3xl font-semibold text-neutral-800"
           >
-            <span aria-hidden>←</span>
+            <FontAwesomeIcon icon={faArrowLeft} className="text-xl" />
             <span>Team</span>
           </button>
           <button
@@ -298,7 +300,7 @@ export default function TeamPage() {
                     onClick={() => void removeMember(member.id)}
                     className="cursor-pointer text-red-400"
                   >
-                    🗑
+                    <FontAwesomeIcon icon={faTrash} />
                   </button>
                 ) : null}
               </div>

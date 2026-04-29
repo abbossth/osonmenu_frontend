@@ -6,6 +6,8 @@ import { BottomNav } from "@/components/MenuUI/BottomNav";
 import { HeaderUserBadge } from "@/components/MenuUI/HeaderUserBadge";
 import { useAuth } from "@/components/providers/auth-provider";
 import type { MenuPlace } from "@/components/MenuBuilder/types";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCircleQuestion, faCreditCard, faUsers, faXmark } from "@fortawesome/free-solid-svg-icons";
 
 type MenuResponse = { place?: MenuPlace };
 
@@ -37,9 +39,9 @@ export default function MorePage() {
   const accentColor = place?.color?.trim() || "#f7906c";
 
   const cards = [
-    { id: "team", title: "Team", icon: "👥" },
-    { id: "billing", title: "Billing", icon: "💳" },
-    { id: "help", title: "Help", icon: "❔" },
+    { id: "team", title: "Team", icon: faUsers },
+    { id: "billing", title: "Billing", icon: faCreditCard },
+    { id: "help", title: "Help", icon: faCircleQuestion },
   ];
 
   return (
@@ -51,7 +53,7 @@ export default function MorePage() {
             onClick={() => router.push(`/${locale}/p/${slug}`)}
             className="cursor-pointer text-2xl leading-none text-neutral-700"
           >
-            ×
+            <FontAwesomeIcon icon={faXmark} className="text-base" />
           </button>
           <p className="text-sm font-semibold tracking-wide text-neutral-700">{place?.name ?? "Restaurant"}</p>
           <HeaderUserBadge firebaseUser={firebaseUser} ownerId={place?.ownerId} accentColor={accentColor} />
@@ -71,7 +73,9 @@ export default function MorePage() {
               }}
               className="cursor-pointer rounded-2xl bg-white px-4 py-5 text-left shadow-sm transition hover:shadow"
             >
-              <div className="text-lg text-neutral-500">{card.icon}</div>
+              <div className="text-lg text-neutral-500">
+                <FontAwesomeIcon icon={card.icon} />
+              </div>
               <p className="mt-2 text-xl font-semibold text-neutral-800">{card.title}</p>
             </button>
           ))}

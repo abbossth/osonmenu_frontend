@@ -36,6 +36,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     place.city = str(body.city, place.city || "");
     place.address = str(body.address, place.address || "");
     place.googleMapsLink = str(body.googleMapsLink, place.googleMapsLink || "");
+    place.yandexMapsLink = str(body.yandexMapsLink, place.yandexMapsLink || "");
     place.instagram = str(body.instagram, place.instagram || "");
     place.facebook = str(body.facebook, place.facebook || "");
     place.tiktok = str(body.tiktok, place.tiktok || "");
@@ -66,6 +67,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         city: place.city || "",
         address: place.address || "",
         googleMapsLink: place.googleMapsLink || "",
+        yandexMapsLink: place.yandexMapsLink || "",
         instagram: place.instagram || "",
         facebook: place.facebook || "",
         tiktok: place.tiktok || "",

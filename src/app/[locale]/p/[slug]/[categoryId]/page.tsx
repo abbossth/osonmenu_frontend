@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFacebookF, faInstagram, faTiktok, faXTwitter } from "@fortawesome/free-brands-svg-icons";
-import { faCompass, faLocationDot, faStar } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft, faCompass, faLocationDot, faMagnifyingGlass, faMapLocationDot, faPenToSquare, faPhone, faStar, faWifi } from "@fortawesome/free-solid-svg-icons";
 import { AddItemModal } from "@/components/MenuBuilder/AddItemModal";
 import { BottomNav } from "@/components/MenuUI/BottomNav";
 import { MenuTabs } from "@/components/MenuUI/MenuTabs";
@@ -89,7 +89,16 @@ export default function CategoryItemsPage() {
   const isAdminMode = canEdit;
   const isLightTheme = (place?.colorTheme ?? "light") === "light";
   const accentColor = place?.color?.trim() || "#f7906c";
-  const detailsLine = [place?.phone, place?.address].filter(Boolean).join("  •  ");
+  const address = place?.address?.trim() ?? "";
+  const city = place?.city?.trim() ?? "";
+  const country = place?.country?.trim() ?? "";
+  const phone = place?.phone?.trim() ?? "";
+  const wifiPassword = place?.wifiPassword?.trim() ?? "";
+  const locationLine = [address, city, country].filter(Boolean).join(", ");
+  const mapLinks = [
+    { label: "Google Maps", icon: faMapLocationDot, value: place?.googleMapsLink?.trim() ?? "" },
+    { label: "Yandex Maps", icon: faLocationDot, value: place?.yandexMapsLink?.trim() ?? "" },
+  ].filter((entry) => entry.value.length > 0);
   const socialLinks = [
     { label: "Instagram", icon: faInstagram, value: place?.instagram ?? "" },
     { label: "Facebook", icon: faFacebookF, value: place?.facebook ?? "" },
@@ -421,7 +430,7 @@ export default function CategoryItemsPage() {
               onClick={() => router.push(`/${locale}/p/${slug}`)}
               className="absolute left-3 top-3 z-30 inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/55 text-2xl text-white shadow"
             >
-              ←
+              <FontAwesomeIcon icon={faArrowLeft} className="text-base" />
             </button>
             {place?.logoUrl ? (
               <div className="pointer-events-none absolute inset-0 grid place-items-center">
@@ -443,26 +452,51 @@ export default function CategoryItemsPage() {
                   className="cursor-pointer text-neutral-500 transition hover:text-neutral-200"
                   aria-label="Edit restaurant"
                 >
-                  ✎
+                  <FontAwesomeIcon icon={faPenToSquare} />
                 </button>
               ) : null}
             </div>
-            <p className={`mt-2 text-sm ${isLightTheme ? "text-neutral-600" : "text-neutral-400"}`}>
-              ◉ {place?.city || "Awesome City"}, {place?.country || "The Best Country"}   〰 {place?.wifiPassword || "CoolWiFiPassword"}
-            </p>
-            {detailsLine ? <p className={`mt-1 text-xs ${isLightTheme ? "text-neutral-500" : "text-neutral-400"}`}>{detailsLine}</p> : null}
-            {place?.googleMapsLink?.trim() ? (
-              <a
-                href={toExternalUrl(place.googleMapsLink)}
-                target="_blank"
-                rel="noreferrer noopener"
-                className={`mt-1 inline-flex items-center gap-1 text-xs underline-offset-2 hover:underline ${
-                  isLightTheme ? "text-neutral-700" : "text-neutral-300"
-                }`}
-              >
-                <FontAwesomeIcon icon={faLocationDot} />
-                <span>Show on map</span>
-              </a>
+            {locationLine || phone || wifiPassword ? (
+              <div className={`mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm ${isLightTheme ? "text-neutral-600" : "text-neutral-400"}`}>
+                {locationLine ? (
+                  <p className="inline-flex items-center gap-1.5">
+                    <FontAwesomeIcon icon={faLocationDot} className="text-xs" />
+                    <span>{locationLine}</span>
+                  </p>
+                ) : null}
+                {phone ? (
+                  <p className="inline-flex items-center gap-1.5">
+                    <FontAwesomeIcon icon={faPhone} className="text-xs" />
+                    <span>{phone}</span>
+                  </p>
+                ) : null}
+                {wifiPassword ? (
+                  <p className="inline-flex items-center gap-1.5">
+                    <FontAwesomeIcon icon={faWifi} className="text-xs" />
+                    <span>{wifiPassword}</span>
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+            {mapLinks.length ? (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {mapLinks.map((entry) => (
+                  <a
+                    key={entry.label}
+                    href={toExternalUrl(entry.value)}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition ${
+                      isLightTheme
+                        ? "border-neutral-200 text-neutral-700 hover:bg-neutral-100"
+                        : "border-white/15 text-neutral-300 hover:bg-white/10"
+                    }`}
+                  >
+                    <FontAwesomeIcon icon={entry.icon} />
+                    <span>{entry.label}</span>
+                  </a>
+                ))}
+              </div>
             ) : null}
             {socialLinks.length ? (
               <div className="mt-2 flex flex-wrap gap-2">
@@ -516,7 +550,7 @@ export default function CategoryItemsPage() {
                 className={`w-full bg-transparent text-base outline-none ${isLightTheme ? "text-neutral-700" : "text-neutral-200"}`}
               />
               <span className={`grid h-8 w-8 place-items-center rounded-full text-lg ${isLightTheme ? "border border-neutral-300 bg-white text-neutral-500" : "border border-white/10 bg-black/40 text-neutral-400"}`}>
-                ⌕
+                <FontAwesomeIcon icon={faMagnifyingGlass} className="text-sm" />
               </span>
             </div>
 

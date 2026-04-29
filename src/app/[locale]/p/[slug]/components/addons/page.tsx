@@ -7,6 +7,8 @@ import { BottomNav } from "@/components/MenuUI/BottomNav";
 import { HeaderUserBadge } from "@/components/MenuUI/HeaderUserBadge";
 import { useAuth } from "@/components/providers/auth-provider";
 import type { MenuAddonGroup, MenuPlace } from "@/components/MenuBuilder/types";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowLeft, faTrashCan } from "@fortawesome/free-solid-svg-icons";
 
 type MenuResponse = { place?: MenuPlace };
 
@@ -78,7 +80,7 @@ export default function ComponentsAddonsPage() {
             onClick={() => router.push(`/${locale}/p/${slug}/components`)}
             className="cursor-pointer text-2xl leading-none text-neutral-700"
           >
-            ←
+            <FontAwesomeIcon icon={faArrowLeft} className="text-base" />
           </button>
           <p className="text-sm font-semibold tracking-wide text-neutral-700">{place?.name ?? "Restaurant"}</p>
           <HeaderUserBadge firebaseUser={firebaseUser} ownerId={place?.ownerId} accentColor={accentColor} />
@@ -122,7 +124,9 @@ export default function ComponentsAddonsPage() {
                     {addon.type === "multiple" ? t("addons.multipleChoice") : t("addons.singleChoice")} • {addon.options.length} {t("addons.options")}
                   </p>
                 </div>
-                <button type="button" onClick={() => void deleteAddon(addon.id)} className="cursor-pointer text-red-500">🗑</button>
+                <button type="button" onClick={() => void deleteAddon(addon.id)} className="cursor-pointer text-red-500">
+                  <FontAwesomeIcon icon={faTrashCan} />
+                </button>
               </div>
             </div>
           ))}

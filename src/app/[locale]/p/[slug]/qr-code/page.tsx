@@ -6,6 +6,8 @@ import QRCode from "qrcode";
 import { BottomNav } from "@/components/MenuUI/BottomNav";
 import { HeaderUserBadge } from "@/components/MenuUI/HeaderUserBadge";
 import { useAuth } from "@/components/providers/auth-provider";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faXmark } from "@fortawesome/free-solid-svg-icons";
 
 type MenuResponse = { place?: { name?: string; color?: string } };
 
@@ -80,7 +82,7 @@ export default function QrCodePage() {
             onClick={() => router.push(`/${locale}/p/${slug}`)}
             className="cursor-pointer text-2xl leading-none text-neutral-700"
           >
-            ×
+            <FontAwesomeIcon icon={faXmark} className="text-base" />
           </button>
           <p className="text-sm font-semibold tracking-wide text-neutral-700">{placeName}</p>
           <HeaderUserBadge firebaseUser={firebaseUser} accentColor={accentColor} />

@@ -1,6 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowLeft, faArrowRight, faPen, faPlus, faTrashCan } from "@fortawesome/free-solid-svg-icons";
 
 type MenuTab = {
   id: string;
@@ -50,7 +52,7 @@ export function MenuTabs({
             className="h-8 w-8 shrink-0 cursor-pointer self-start rounded-full text-sm font-semibold text-white shadow-sm"
             style={{ backgroundColor: accentColor }}
           >
-            +
+            <FontAwesomeIcon icon={faPlus} />
           </button>
         ) : null}
         {menus.map((menu) => {
@@ -83,10 +85,18 @@ export function MenuTabs({
                     isLight ? "border border-neutral-200 bg-neutral-100 text-neutral-700" : "border border-white/10 bg-black/40 text-white"
                   }`}
                 >
-                  <button type="button" onClick={() => onMoveLeft?.(menu.id)} className="cursor-pointer">↩</button>
-                  <button type="button" onClick={() => onEdit?.(menu.id)} className="cursor-pointer">✎</button>
-                  <button type="button" onClick={() => onMoveRight?.(menu.id)} className="cursor-pointer">↪</button>
-                  <button type="button" onClick={() => onDelete?.(menu.id)} className="cursor-pointer">🗑</button>
+                  <button type="button" onClick={() => onMoveLeft?.(menu.id)} className="cursor-pointer">
+                    <FontAwesomeIcon icon={faArrowLeft} />
+                  </button>
+                  <button type="button" onClick={() => onEdit?.(menu.id)} className="cursor-pointer">
+                    <FontAwesomeIcon icon={faPen} />
+                  </button>
+                  <button type="button" onClick={() => onMoveRight?.(menu.id)} className="cursor-pointer">
+                    <FontAwesomeIcon icon={faArrowRight} />
+                  </button>
+                  <button type="button" onClick={() => onDelete?.(menu.id)} className="cursor-pointer">
+                    <FontAwesomeIcon icon={faTrashCan} />
+                  </button>
                 </div>
               ) : null}
             </div>
@@ -99,7 +109,7 @@ export function MenuTabs({
             className="h-8 w-8 shrink-0 cursor-pointer self-start rounded-full text-sm font-semibold text-white shadow-sm"
             style={{ backgroundColor: accentColor }}
           >
-            +
+            <FontAwesomeIcon icon={faPlus} />
           </button>
         ) : null}
       </div>

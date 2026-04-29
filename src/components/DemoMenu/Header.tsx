@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/navigation";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 
 type HeaderProps = {
   onBack: () => void;
@@ -43,7 +45,7 @@ export function Header({ onBack, backVisible }: HeaderProps) {
           }`}
           aria-label={t("back")}
         >
-          ←
+          <FontAwesomeIcon icon={faArrowLeft} />
         </button>
         <div className="rounded-lg bg-black/50 px-2.5 py-1 text-xs font-semibold text-white ring-1 ring-white/15">
           {t("brand")}

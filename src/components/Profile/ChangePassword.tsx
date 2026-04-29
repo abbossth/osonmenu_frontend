@@ -74,7 +74,7 @@ export function ChangePassword({
   }
 
   return (
-    <section className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+    <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
       <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">{title}</h3>
       <form onSubmit={handleSubmit} className="mt-5 space-y-4">
         <div>
@@ -87,7 +87,7 @@ export function ChangePassword({
               value={newPassword}
               placeholder={newPasswordPlaceholder}
               onChange={(event) => setNewPassword(event.target.value)}
-              className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 pr-20 text-sm text-neutral-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:placeholder:text-neutral-500"
+              className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 pr-20 text-sm text-neutral-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:placeholder:text-neutral-500"
             />
             <button
               type="button"
@@ -108,7 +108,7 @@ export function ChangePassword({
               value={confirmPassword}
               placeholder={confirmPasswordPlaceholder}
               onChange={(event) => setConfirmPassword(event.target.value)}
-              className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 pr-20 text-sm text-neutral-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:placeholder:text-neutral-500"
+              className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 pr-20 text-sm text-neutral-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:placeholder:text-neutral-500"
             />
             <button
               type="button"
@@ -126,7 +126,7 @@ export function ChangePassword({
         <button
           type="submit"
           disabled={loading}
-          className="inline-flex rounded-full bg-orange-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-orange-400 disabled:opacity-60"
+          className="inline-flex rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-400 disabled:opacity-60"
         >
           {loading ? "..." : updateButton}
         </button>

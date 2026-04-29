@@ -87,6 +87,7 @@ export type MenuPlace = {
   city: string;
   address: string;
   googleMapsLink: string;
+  yandexMapsLink?: string;
   instagram: string;
   facebook: string;
   tiktok: string;
