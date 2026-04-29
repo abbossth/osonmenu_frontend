@@ -260,7 +260,7 @@ export default function PublicMenuPage() {
         const data = (await res.json()) as MenuResponse;
         setPlace(data.place);
         setCanEdit(Boolean(data.canEdit || data.isOwner));
-        const firstMenu = (data.place.menus ?? []).find((menu) => (menu.categories?.length ?? 0) > 0) ?? data.place.menus?.[0] ?? null;
+        const firstMenu = data.place.menus?.[0] ?? null;
         const firstCategoryId = firstMenu?.categories?.[0]?._id ?? null;
         setMenuOrder((data.place.menus ?? []).map((menu) => menu.id));
         setActiveMenuId(firstMenu?.id ?? null);

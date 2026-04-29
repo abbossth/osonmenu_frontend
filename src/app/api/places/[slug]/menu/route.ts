@@ -238,9 +238,11 @@ export async function GET(request: NextRequest, { params }: Params) {
     const hasEntityCategories = categoryDocs.length > 0;
     const useEntityCollections = hasEntityCategories || itemDocs.length > 0;
 
+    const embeddedCategories = normalizeCategories(establishment.categories);
     const categories = useEntityCollections
-      ? categoryDocs
-          .map((category, categoryIndex) => {
+      ? (() => {
+          const entityCategories = categoryDocs
+            .map((category, categoryIndex) => {
             const items = itemDocs
               .filter((item) => String(item.categoryId) === String(category._id))
               .map((item, itemIndex) => ({
@@ -265,30 +267,46 @@ export async function GET(request: NextRequest, { params }: Params) {
               .sort((a, b) => a.order - b.order)
               .map((item, index) => ({ ...item, order: index }));
 
-            return {
-              _id: String(category._id),
-              menuId:
-                typeof category.menuId === "string" && category.menuId.trim() ? category.menuId.trim() : "main",
-              menuName:
-                typeof category.menuName === "string" && category.menuName.trim() ? category.menuName.trim() : "Menu",
-              name: typeof category.name === "string" ? category.name : "Untitled",
-              nameI18n: normalizeI18n(
-                category.nameI18n,
-                typeof category.name === "string" ? category.name : "Untitled",
-              ),
-              description: typeof category.description === "string" ? category.description : "",
-              imageUrl:
-                typeof category.imageUrl === "string" && category.imageUrl.trim()
-                  ? category.imageUrl.trim()
-                  : getDefaultCategoryImage(typeof category.name === "string" ? category.name : "menu"),
-              isVisible: typeof category.isVisible === "boolean" ? category.isVisible : true,
-              order: normalizeOrder(category.order, categoryIndex),
-              items,
-            };
-          })
-          .sort((a, b) => a.order - b.order)
-          .map((category, index) => ({ ...category, order: index }))
-      : normalizeCategories(establishment.categories);
+              return {
+                _id: String(category._id),
+                menuId:
+                  typeof category.menuId === "string" && category.menuId.trim() ? category.menuId.trim() : "main",
+                menuName:
+                  typeof category.menuName === "string" && category.menuName.trim() ? category.menuName.trim() : "Menu",
+                name: typeof category.name === "string" ? category.name : "Untitled",
+                nameI18n: normalizeI18n(
+                  category.nameI18n,
+                  typeof category.name === "string" ? category.name : "Untitled",
+                ),
+                description: typeof category.description === "string" ? category.description : "",
+                imageUrl:
+                  typeof category.imageUrl === "string" && category.imageUrl.trim()
+                    ? category.imageUrl.trim()
+                    : getDefaultCategoryImage(typeof category.name === "string" ? category.name : "menu"),
+                isVisible: typeof category.isVisible === "boolean" ? category.isVisible : true,
+                order: normalizeOrder(category.order, categoryIndex),
+                items,
+              };
+            })
+            .sort((a, b) => a.order - b.order)
+            .map((category, index) => ({ ...category, order: index }));
+
+          // Backward-compatible merge: preserve legacy embedded categories that were not migrated yet.
+          if (!embeddedCategories.length) return entityCategories;
+          const mergedById = new Map<string, (typeof entityCategories)[number]>();
+          for (const category of entityCategories) {
+            mergedById.set(category._id, category);
+          }
+          for (const category of embeddedCategories) {
+            if (!mergedById.has(category._id)) {
+              mergedById.set(category._id, category);
+            }
+          }
+          return Array.from(mergedById.values())
+            .sort((a, b) => a.order - b.order)
+            .map((category, index) => ({ ...category, order: index }));
+        })()
+      : embeddedCategories;
 
     const menus = hasEntityCategories
       ? buildMenus(

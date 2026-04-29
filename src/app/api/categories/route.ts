@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       isVisible?: boolean;
     };
     const slug = normalizeSlug(body.slug);
-    const menuId = normalizeSlug(body.menuId) || "main";
+    const menuId = typeof body.menuId === "string" ? body.menuId.trim() || "main" : "main";
     const menuName = normalizeName(body.menuName) || "Menu";
     const name = normalizeName(body.name);
     const nameI18n = {

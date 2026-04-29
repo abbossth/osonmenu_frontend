@@ -9,7 +9,7 @@ export async function PATCH(request: NextRequest) {
 
     const body = (await request.json()) as { slug?: string; menuId?: string; categoryIds?: string[] };
     const slug = normalizeSlug(body.slug);
-    const menuId = normalizeSlug(body.menuId) || "main";
+    const menuId = typeof body.menuId === "string" ? body.menuId.trim() || "main" : "main";
     const categoryIds = Array.isArray(body.categoryIds) ? body.categoryIds : [];
 
     if (!slug || categoryIds.length === 0) {
