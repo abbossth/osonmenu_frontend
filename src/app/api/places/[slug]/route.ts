@@ -36,7 +36,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     place.city = str(body.city, place.city || "");
     place.address = str(body.address, place.address || "");
     place.googleMapsLink = str(body.googleMapsLink, place.googleMapsLink || "");
-    place.yandexMapsLink = str(body.yandexMapsLink, place.yandexMapsLink || "");
+    // Use strict:false so the field is persisted even if a stale dev model cache is still active.
+    place.set("yandexMapsLink", str(body.yandexMapsLink, place.yandexMapsLink || ""), { strict: false });
     place.instagram = str(body.instagram, place.instagram || "");
     place.facebook = str(body.facebook, place.facebook || "");
     place.tiktok = str(body.tiktok, place.tiktok || "");

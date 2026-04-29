@@ -318,6 +318,7 @@ export async function GET(request: NextRequest, { params }: Params) {
           entry === "uz" || entry === "ru" || entry === "en",
         )
       : ["uz", "ru", "en"];
+    const rawEstablishment = establishment.toObject() as Record<string, unknown>;
 
     return NextResponse.json({
       place: {
@@ -338,7 +339,7 @@ export async function GET(request: NextRequest, { params }: Params) {
         city: typeof establishment.city === "string" ? establishment.city : "",
         address: typeof establishment.address === "string" ? establishment.address : "",
         googleMapsLink: typeof establishment.googleMapsLink === "string" ? establishment.googleMapsLink : "",
-        yandexMapsLink: typeof establishment.yandexMapsLink === "string" ? establishment.yandexMapsLink : "",
+        yandexMapsLink: typeof rawEstablishment.yandexMapsLink === "string" ? rawEstablishment.yandexMapsLink : "",
         instagram: typeof establishment.instagram === "string" ? establishment.instagram : "",
         facebook: typeof establishment.facebook === "string" ? establishment.facebook : "",
         tiktok: typeof establishment.tiktok === "string" ? establishment.tiktok : "",
