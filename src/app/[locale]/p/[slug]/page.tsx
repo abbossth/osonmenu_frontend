@@ -115,6 +115,10 @@ export default function PublicMenuPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [menuOrder, setMenuOrder] = useState<string[]>([]);
   const [menuEditorOpen, setMenuEditorOpen] = useState(false);
+  const [menuRenameOpen, setMenuRenameOpen] = useState(false);
+  const [menuRenameId, setMenuRenameId] = useState<string | null>(null);
+  const [menuRenameName, setMenuRenameName] = useState("");
+  const [menuDeleteTarget, setMenuDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [menuForm, setMenuForm] = useState<MenuFormState>({ name: "", isVisible: true, insertSide: "right" });
   const [categoryEditorOpen, setCategoryEditorOpen] = useState(false);
   const [categoryToEdit, setCategoryToEdit] = useState<MenuCategory | null>(null);
@@ -726,14 +730,23 @@ export default function PublicMenuPage() {
     });
   }
 
-  async function editMenu(menuId: string) {
+  function openEditMenuModal(menuId: string) {
     if (!place || !isAdminMode) return;
     const menu = orderedMenus.find((entry) => entry.id === menuId);
     if (!menu) return;
-    const nextName = window.prompt("Menu name", menu.name)?.trim();
+    setMenuRenameId(menuId);
+    setMenuRenameName(menu.name);
+    setMenuRenameOpen(true);
+  }
+
+  async function submitMenuRenameModal() {
+    if (!place || !isAdminMode || !menuRenameId) return;
+    const menu = orderedMenus.find((entry) => entry.id === menuRenameId);
+    if (!menu) return;
+    const nextName = menuRenameName.trim();
     if (!nextName || nextName === menu.name) return;
     try {
-      await authorizedFetch(`/api/menus/${menuId}`, {
+      await authorizedFetch(`/api/menus/${menuRenameId}`, {
         method: "PATCH",
         body: JSON.stringify({ slug: place.slug, name: nextName, isVisible: true }),
       });
@@ -741,24 +754,31 @@ export default function PublicMenuPage() {
         current
           ? {
               ...current,
-              menus: (current.menus ?? []).map((entry) => (entry.id === menuId ? { ...entry, name: nextName } : entry)),
+              menus: (current.menus ?? []).map((entry) => (entry.id === menuRenameId ? { ...entry, name: nextName } : entry)),
               categories: current.categories.map((category) =>
-                category.menuId === menuId ? { ...category, menuName: nextName } : category,
+                category.menuId === menuRenameId ? { ...category, menuName: nextName } : category,
               ),
             }
           : current,
       );
+      setMenuRenameOpen(false);
+      setMenuRenameId(null);
+      setMenuRenameName("");
     } catch {
       setError("Failed to rename menu");
     }
   }
 
-  async function deleteMenu(menuId: string) {
+  function openDeleteMenuModal(menuId: string) {
     if (!place || !isAdminMode) return;
     const menu = orderedMenus.find((entry) => entry.id === menuId);
     if (!menu) return;
-    const confirmed = window.confirm(`Delete menu "${menu.name}" and all its categories?`);
-    if (!confirmed) return;
+    setMenuDeleteTarget({ id: menu.id, name: menu.name });
+  }
+
+  async function confirmDeleteMenu() {
+    if (!place || !isAdminMode || !menuDeleteTarget) return;
+    const menuId = menuDeleteTarget.id;
     try {
       await authorizedFetch(`/api/menus/${menuId}?slug=${place.slug}`, { method: "DELETE" });
       setPlace((current) =>
@@ -777,6 +797,7 @@ export default function PublicMenuPage() {
         setActiveMenuId(fallback);
         setActiveCategoryId(orderedMenus.find((entry) => entry.id === fallback)?.categories[0]?._id ?? null);
       }
+      setMenuDeleteTarget(null);
     } catch {
       setError("Failed to delete menu");
     }
@@ -931,8 +952,8 @@ export default function PublicMenuPage() {
                 isAdmin={isAdminMode}
                 onMoveLeft={(menuId) => moveMenu(menuId, "left")}
                 onMoveRight={(menuId) => moveMenu(menuId, "right")}
-                onEdit={(menuId) => void editMenu(menuId)}
-                onDelete={(menuId) => void deleteMenu(menuId)}
+                onEdit={openEditMenuModal}
+                onDelete={openDeleteMenuModal}
                 onAddLeft={() => openCreateMenuModal("left")}
                 onAddRight={() => openCreateMenuModal("right")}
                 onSelect={handleMenuSelect}
@@ -1041,6 +1062,66 @@ export default function PublicMenuPage() {
                 className="rounded-xl bg-orange-400 px-5 py-2 font-semibold text-white"
               >
                 Create
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {isAdminMode && menuRenameOpen ? (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 p-4" onClick={() => setMenuRenameOpen(false)}>
+          <div className="w-full max-w-[460px] rounded-3xl bg-white p-6 dark:bg-neutral-900" onClick={(event) => event.stopPropagation()}>
+            <h3 className="text-2xl font-semibold text-neutral-900 dark:text-white">Edit menu</h3>
+            <label className="mt-4 block">
+              <span className="mb-1 block text-sm text-neutral-500 dark:text-neutral-400">Menu name *</span>
+              <input
+                value={menuRenameName}
+                onChange={(event) => setMenuRenameName(event.target.value)}
+                className="w-full rounded-xl bg-neutral-100 px-3 py-2.5 text-sm text-neutral-800 outline-none dark:bg-neutral-800 dark:text-neutral-100"
+              />
+            </label>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setMenuRenameOpen(false)}
+                className="rounded-xl bg-orange-100 px-5 py-2 font-semibold text-orange-500"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void submitMenuRenameModal()}
+                className="rounded-xl px-5 py-2 font-semibold text-white"
+                style={{ backgroundColor: accentColor }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {isAdminMode && menuDeleteTarget ? (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 p-4" onClick={() => setMenuDeleteTarget(null)}>
+          <div className="w-full max-w-[460px] rounded-3xl bg-white p-6 dark:bg-neutral-900" onClick={(event) => event.stopPropagation()}>
+            <h3 className="text-2xl font-semibold text-neutral-900 dark:text-white">Delete menu</h3>
+            <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-300">
+              Delete menu "{menuDeleteTarget.name}" and all categories inside it?
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setMenuDeleteTarget(null)}
+                className="rounded-xl bg-orange-100 px-5 py-2 font-semibold text-orange-500"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void confirmDeleteMenu()}
+                className="rounded-xl bg-red-500 px-5 py-2 font-semibold text-white"
+              >
+                Delete
               </button>
             </div>
           </div>
