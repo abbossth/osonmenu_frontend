@@ -177,12 +177,15 @@ export default function PublicMenuPage() {
   const queryMenuId =
     menuFromQuery && orderedMenus.some((menu) => menu.id === menuFromQuery) ? menuFromQuery : null;
   const menuWithCategories = orderedMenus.find((menu) => menu.categories.length > 0) ?? null;
+  const hasExplicitMenuSelection = Boolean(
+    queryMenuId || (activeMenuId && orderedMenus.some((menu) => menu.id === activeMenuId)),
+  );
   const preferredActiveMenuId =
     queryMenuId ??
     (activeMenuId && orderedMenus.some((menu) => menu.id === activeMenuId) ? activeMenuId : orderedMenus[0]?.id ?? null);
   const preferredActiveMenu = orderedMenus.find((menu) => menu.id === preferredActiveMenuId) ?? null;
   const resolvedActiveMenuId =
-    preferredActiveMenu && preferredActiveMenu.categories.length === 0 && menuWithCategories
+    !hasExplicitMenuSelection && preferredActiveMenu && preferredActiveMenu.categories.length === 0 && menuWithCategories
       ? menuWithCategories.id
       : preferredActiveMenu?.id ?? null;
   const activeMenu = orderedMenus.find((menu) => menu.id === resolvedActiveMenuId) ?? null;
