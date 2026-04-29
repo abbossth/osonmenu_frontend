@@ -174,9 +174,15 @@ export default function PublicMenuPage() {
   }, [menuOrder, menus]);
   const queryMenuId =
     menuFromQuery && orderedMenus.some((menu) => menu.id === menuFromQuery) ? menuFromQuery : null;
-  const resolvedActiveMenuId =
+  const menuWithCategories = orderedMenus.find((menu) => menu.categories.length > 0) ?? null;
+  const preferredActiveMenuId =
     queryMenuId ??
     (activeMenuId && orderedMenus.some((menu) => menu.id === activeMenuId) ? activeMenuId : orderedMenus[0]?.id ?? null);
+  const preferredActiveMenu = orderedMenus.find((menu) => menu.id === preferredActiveMenuId) ?? null;
+  const resolvedActiveMenuId =
+    preferredActiveMenu && preferredActiveMenu.categories.length === 0 && menuWithCategories
+      ? menuWithCategories.id
+      : preferredActiveMenu?.id ?? null;
   const activeMenu = orderedMenus.find((menu) => menu.id === resolvedActiveMenuId) ?? null;
   const activeMenuCategories = activeMenu?.categories ?? [];
   const resolvedActiveCategoryId =
@@ -226,7 +232,7 @@ export default function PublicMenuPage() {
         const data = (await res.json()) as MenuResponse;
         setPlace(data.place);
         setCanEdit(Boolean(data.canEdit || data.isOwner));
-        const firstMenu = data.place.menus?.[0] ?? null;
+        const firstMenu = (data.place.menus ?? []).find((menu) => (menu.categories?.length ?? 0) > 0) ?? data.place.menus?.[0] ?? null;
         const firstCategoryId = firstMenu?.categories?.[0]?._id ?? null;
         setMenuOrder((data.place.menus ?? []).map((menu) => menu.id));
         setActiveMenuId(firstMenu?.id ?? null);
@@ -258,6 +264,11 @@ export default function PublicMenuPage() {
     }
     void verifyEditAccess();
   }, [firebaseUser, slug]);
+
+  useEffect(() => {
+    if (!slug || !queryMenuId || !resolvedActiveMenuId || queryMenuId === resolvedActiveMenuId) return;
+    router.replace(`/${locale}/p/${slug}?menu=${resolvedActiveMenuId}`);
+  }, [locale, queryMenuId, resolvedActiveMenuId, router, slug]);
 
   async function authorizedFetch(input: string, init: RequestInit = {}) {
     if (!firebaseUser || !isAdminMode) throw new Error("Unauthorized");
@@ -337,8 +348,9 @@ export default function PublicMenuPage() {
         const base = current.length ? [...current] : orderedMenus.map((menu) => menu.id);
         return insertSide === "left" ? [data.menu.id, ...base] : [...base, data.menu.id];
       });
-      setActiveMenuId(data.menu.id);
-      setActiveCategoryId(null);
+      if (!activeMenuId) {
+        setActiveMenuId(data.menu.id);
+      }
     } catch (menuError) {
       setError(menuError instanceof Error ? menuError.message : "Failed to create menu");
     }

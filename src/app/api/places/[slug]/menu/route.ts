@@ -235,7 +235,8 @@ export async function GET(request: NextRequest, { params }: Params) {
         ? await ItemEntityModel.find({ establishmentId: establishment._id, categoryId: { $in: categoryIds } }).lean()
         : [];
 
-    const useEntityCollections = menuDocs.length > 0 || categoryDocs.length > 0 || itemDocs.length > 0;
+    const hasEntityCategories = categoryDocs.length > 0;
+    const useEntityCollections = hasEntityCategories || itemDocs.length > 0;
 
     const categories = useEntityCollections
       ? categoryDocs
@@ -289,7 +290,7 @@ export async function GET(request: NextRequest, { params }: Params) {
           .map((category, index) => ({ ...category, order: index }))
       : normalizeCategories(establishment.categories);
 
-    const menus = useEntityCollections
+    const menus = hasEntityCategories
       ? buildMenus(
           categories,
           menuDocs.map((menu, index) => ({
