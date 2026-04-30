@@ -261,6 +261,9 @@
       "usd": "Dollar",
       "uzsSuffix": "so'm"
     },
+    "subscribe": "Ulanmoqda...",
+    "paymentSuccess": "Obuna faol",
+    "paymentCanceled": "To'lov bekor qilindi",
     "perMonth": "oy",
     "plans": {
       "monthly": {

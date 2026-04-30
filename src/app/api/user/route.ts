@@ -55,6 +55,10 @@ export async function PATCH(request: NextRequest) {
         firstName: updated.firstName,
         lastName: updated.lastName,
         fullName: updated.fullName,
+        stripeCustomerId: updated.stripeCustomerId || "",
+        subscriptionStatus: updated.subscriptionStatus || "inactive",
+        currentPlan: updated.currentPlan || "",
+        currentPeriodEnd: updated.currentPeriodEnd || null,
         createdAt: updated.createdAt,
       },
     });

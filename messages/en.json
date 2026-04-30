@@ -261,6 +261,9 @@
       "usd": "Dollar",
       "uzsSuffix": "so'm"
     },
+    "subscribe": "Subscribing...",
+    "paymentSuccess": "Subscription активен",
+    "paymentCanceled": "Payment canceled",
     "perMonth": "month",
     "plans": {
       "monthly": {

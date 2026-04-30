@@ -3,7 +3,10 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { fadeUp, staggerContainer } from "@/lib/motion";
+import { useAuth } from "@/components/providers/auth-provider";
+import { useRouter } from "@/i18n/navigation";
 import { PricingCard, type PricingPlan } from "./PricingCard";
 import { CurrencyToggle, type CurrencyCode } from "./CurrencyToggle";
 
@@ -36,6 +39,9 @@ const ORDER: Array<keyof PricingMessages["plans"]> = [
 
 export function PricingSection() {
   const t = useTranslations("Pricing");
+  const { firebaseUser } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const data = {
     title: t("title"),
     subtitle: t("subtitle"),
@@ -49,6 +55,17 @@ export function PricingSection() {
   const billingCycle = "yearly";
   const [currency, setCurrency] = useState<CurrencyCode>("UZS");
   const [mounted, setMounted] = useState(false);
+  const [subscribingKey, setSubscribingKey] = useState<string | null>(null);
+  const [subscribeError, setSubscribeError] = useState<string | null>(null);
+  const paymentSuccess = searchParams.get("success") === "true";
+  const paymentCanceled = searchParams.get("canceled") === "true";
+
+  const planPriceIds = {
+    monthly: process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY || "",
+    threeMonths: process.env.NEXT_PUBLIC_STRIPE_PRICE_THREE_MONTHS || "",
+    sixMonths: process.env.NEXT_PUBLIC_STRIPE_PRICE_SIX_MONTHS || "",
+    yearly: process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY || "",
+  } as const;
 
   const plans = useMemo(() => ORDER.map((key) => data.plans[key]), [data]);
 
@@ -68,6 +85,45 @@ export function PricingSection() {
     if (!mounted) return;
     window.localStorage.setItem("pricing-currency", currency);
   }, [currency, mounted]);
+
+  async function subscribe(planKey: keyof PricingMessages["plans"]) {
+    if (!firebaseUser) {
+      router.push("/auth/login");
+      return;
+    }
+
+    const priceId = planPriceIds[planKey];
+    if (!priceId) {
+      setSubscribeError("Stripe price ID is not configured.");
+      return;
+    }
+
+    try {
+      setSubscribeError(null);
+      setSubscribingKey(planKey);
+      const token = await firebaseUser.getIdToken();
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ priceId }),
+      });
+
+      const payload = (await res.json().catch(() => null)) as { url?: string; error?: string } | null;
+      if (!res.ok || !payload?.url) {
+        throw new Error(payload?.error || "Failed to create checkout session");
+      }
+
+      window.location.href = payload.url;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to start checkout";
+      setSubscribeError(message);
+    } finally {
+      setSubscribingKey(null);
+    }
+  }
 
   return (
     <section id="pricing" className="border-b border-neutral-200 py-20 dark:border-neutral-800 sm:py-28">
@@ -102,6 +158,21 @@ export function PricingSection() {
           <motion.p variants={fadeUp} className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
             {data.billing.yearlyHint}
           </motion.p>
+          {paymentSuccess ? (
+            <motion.p variants={fadeUp} className="mt-3 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+              {t("paymentSuccess")}
+            </motion.p>
+          ) : null}
+          {paymentCanceled ? (
+            <motion.p variants={fadeUp} className="mt-3 text-sm font-semibold text-amber-600 dark:text-amber-400">
+              {t("paymentCanceled")}
+            </motion.p>
+          ) : null}
+          {subscribeError ? (
+            <motion.p variants={fadeUp} className="mt-3 text-sm font-semibold text-red-600 dark:text-red-400">
+              {subscribeError}
+            </motion.p>
+          ) : null}
         </motion.div>
 
         <AnimatePresence mode="wait" initial={false}>
@@ -120,7 +191,9 @@ export function PricingSection() {
               variants={staggerContainer}
               className="grid gap-5 md:grid-cols-2 xl:grid-cols-4"
             >
-              {plans.map((plan) => (
+              {plans.map((plan, index) => {
+                const planKey = ORDER[index];
+                return (
                 <motion.div key={plan.name} variants={fadeUp} className={plan.highlighted ? "xl:scale-[1.03]" : ""}>
                   <PricingCard
                     plan={plan}
@@ -129,9 +202,13 @@ export function PricingSection() {
                     currency={currency}
                     uzsSuffix={data.currency.uzsSuffix}
                     perMonthText={data.perMonth}
+                    onSubscribe={() => void subscribe(planKey)}
+                    subscribing={subscribingKey === planKey}
+                    subscribeLabel={t("subscribe")}
                   />
                 </motion.div>
-              ))}
+                );
+              })}
             </motion.div>
           </motion.div>
         </AnimatePresence>

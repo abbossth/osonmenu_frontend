@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFacebookF, faInstagram, faTiktok, faXTwitter } from "@fortawesome/free-brands-svg-icons";
-import { faArrowLeft, faCompass, faLocationDot, faMagnifyingGlass, faMapLocationDot, faPenToSquare, faPhone, faStar, faWifi, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faCompass, faLocationDot, faMagnifyingGlass, faMapLocationDot, faPenToSquare, faPhone, faStar, faWifi, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { AddItemModal } from "@/components/MenuBuilder/AddItemModal";
 import { CategoryList } from "@/components/MenuUI/CategoryList";
 import { BottomNav } from "@/components/MenuUI/BottomNav";
@@ -1106,7 +1106,7 @@ export default function PublicMenuPage() {
           <div className="w-full max-w-[460px] rounded-3xl bg-white p-6 dark:bg-neutral-900" onClick={(event) => event.stopPropagation()}>
             <h3 className="text-2xl font-semibold text-neutral-900 dark:text-white">Delete menu</h3>
             <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-300">
-              Delete menu "{menuDeleteTarget.name}" and all categories inside it?
+              Delete menu &quot;{menuDeleteTarget.name}&quot; and all categories inside it?
             </p>
             <div className="mt-6 flex justify-end gap-3">
               <button

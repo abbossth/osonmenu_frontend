@@ -261,6 +261,9 @@
       "usd": "Доллар",
       "uzsSuffix": "сум"
     },
+    "subscribe": "Оформление...",
+    "paymentSuccess": "Подписка активна",
+    "paymentCanceled": "Оплата отменена",
     "perMonth": "мес",
     "plans": {
       "monthly": {

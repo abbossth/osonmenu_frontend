@@ -34,6 +34,10 @@ export async function GET(request: NextRequest) {
         firstName: user.firstName,
         lastName: user.lastName,
         fullName: user.fullName,
+        stripeCustomerId: user.stripeCustomerId || "",
+        subscriptionStatus: user.subscriptionStatus || "inactive",
+        currentPlan: user.currentPlan || "",
+        currentPeriodEnd: user.currentPeriodEnd || null,
         createdAt: user.createdAt,
       },
     });

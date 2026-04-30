@@ -26,6 +26,9 @@ type PricingCardProps = {
   currency: CurrencyCode;
   uzsSuffix: string;
   perMonthText: string;
+  onSubscribe?: () => void;
+  subscribing?: boolean;
+  subscribeLabel?: string;
 };
 
 function formatCurrency(valueUZS: number, currency: CurrencyCode, uzsSuffix: string) {
@@ -53,6 +56,9 @@ export function PricingCard({
   currency,
   uzsSuffix,
   perMonthText,
+  onSubscribe,
+  subscribing = false,
+  subscribeLabel,
 }: PricingCardProps) {
   const isHighlighted = Boolean(plan.highlighted);
   const priceValue = plan.prices[billingCycle];
@@ -167,13 +173,15 @@ export function PricingCard({
 
       <button
         type="button"
+        onClick={onSubscribe}
+        disabled={subscribing}
         className={`mt-7 rounded-full px-4 py-2.5 text-sm font-semibold transition ${
           isHighlighted
             ? "bg-orange-400 text-neutral-900 hover:bg-orange-300"
             : "border border-neutral-300 bg-white text-neutral-900 hover:border-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:hover:border-neutral-500"
-        }`}
+        } ${subscribing ? "cursor-not-allowed opacity-70" : ""}`}
       >
-        {plan.cta}
+        {subscribing ? (subscribeLabel || plan.cta) : plan.cta}
       </button>
       <AnimatePresence mode="wait" initial={false}>
         <motion.p

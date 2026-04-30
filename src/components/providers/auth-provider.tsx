@@ -11,6 +11,10 @@ export type AppUser = {
   firstName: string;
   lastName: string;
   fullName: string;
+  stripeCustomerId?: string;
+  subscriptionStatus?: "active" | "inactive";
+  currentPlan?: string;
+  currentPeriodEnd?: string | null;
   createdAt: string;
 };
 

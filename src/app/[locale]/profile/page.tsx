@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { useAuth } from "@/components/providers/auth-provider";
 import type { AppUser } from "@/components/providers/auth-provider";
@@ -32,6 +33,7 @@ export default function ProfilePage() {
   const t = useTranslations("ProfilePanel");
   const { firebaseUser, appUser, loading, logout, setAppUserData } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<ProfileTab>("places");
   const [places, setPlaces] = useState<Place[]>([]);
   const [placesScope, setPlacesScope] = useState<"own" | "shared">("own");
@@ -39,6 +41,7 @@ export default function ProfilePage() {
   const [placesLoading, setPlacesLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const paymentSuccess = searchParams.get("success") === "true";
 
   const domain = typeof window === "undefined" ? "yourdomain.com" : window.location.host;
   const existingSlugs = useMemo(() => allSlugs, [allSlugs]);
@@ -192,6 +195,11 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
       <Navbar />
       <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
+        {paymentSuccess ? (
+          <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+            Subscription активен
+          </div>
+        ) : null}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-white">{t("title")}</h1>
           <Tabs

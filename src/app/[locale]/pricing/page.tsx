@@ -6,14 +6,15 @@ type Props = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default async function DashboardPage({ params, searchParams }: Props) {
+export default async function LocalizedPricingPage({ params, searchParams }: Props) {
   const { locale } = await params;
+  setRequestLocale(locale);
+
   const queryParams = (await searchParams) || {};
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(queryParams)) {
     if (typeof value === "string") query.set(key, value);
   }
   const suffix = query.toString() ? `?${query.toString()}` : "";
-  setRequestLocale(locale);
-  redirect(`/${locale}/profile${suffix}`);
+  redirect(`/${locale}${suffix}#pricing`);
 }
