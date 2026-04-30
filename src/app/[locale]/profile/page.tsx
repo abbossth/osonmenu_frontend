@@ -2,7 +2,6 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { useAuth } from "@/components/providers/auth-provider";
 import type { AppUser } from "@/components/providers/auth-provider";
@@ -33,7 +32,6 @@ export default function ProfilePage() {
   const t = useTranslations("ProfilePanel");
   const { firebaseUser, appUser, loading, logout, setAppUserData } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<ProfileTab>("places");
   const [places, setPlaces] = useState<Place[]>([]);
   const [placesScope, setPlacesScope] = useState<"own" | "shared">("own");
@@ -41,7 +39,7 @@ export default function ProfilePage() {
   const [placesLoading, setPlacesLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const paymentSuccess = searchParams.get("success") === "true";
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
 
   const domain = typeof window === "undefined" ? "yourdomain.com" : window.location.host;
   const existingSlugs = useMemo(() => allSlugs, [allSlugs]);
@@ -79,6 +77,12 @@ export default function ProfilePage() {
       router.replace("/auth/login");
     }
   }, [firebaseUser, loading, router]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    setPaymentSuccess(params.get("success") === "true");
+  }, []);
 
   useEffect(() => {
     async function fetchPlaces() {

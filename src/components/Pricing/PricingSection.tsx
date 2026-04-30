@@ -3,7 +3,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { fadeUp, staggerContainer } from "@/lib/motion";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useRouter } from "@/i18n/navigation";
@@ -41,7 +40,6 @@ export function PricingSection() {
   const t = useTranslations("Pricing");
   const { firebaseUser } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const data = {
     title: t("title"),
     subtitle: t("subtitle"),
@@ -57,8 +55,8 @@ export function PricingSection() {
   const [mounted, setMounted] = useState(false);
   const [subscribingKey, setSubscribingKey] = useState<string | null>(null);
   const [subscribeError, setSubscribeError] = useState<string | null>(null);
-  const paymentSuccess = searchParams.get("success") === "true";
-  const paymentCanceled = searchParams.get("canceled") === "true";
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [paymentCanceled, setPaymentCanceled] = useState(false);
 
   const planPriceIds = {
     monthly: process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY || "",
@@ -85,6 +83,13 @@ export function PricingSection() {
     if (!mounted) return;
     window.localStorage.setItem("pricing-currency", currency);
   }, [currency, mounted]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    setPaymentSuccess(params.get("success") === "true");
+    setPaymentCanceled(params.get("canceled") === "true");
+  }, []);
 
   async function subscribe(planKey: keyof PricingMessages["plans"]) {
     if (!firebaseUser) {

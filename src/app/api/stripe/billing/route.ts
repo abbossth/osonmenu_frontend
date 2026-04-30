@@ -71,14 +71,15 @@ export async function GET(request: NextRequest) {
     let currentPeriodEnd = ownerUser.currentPeriodEnd || null;
 
     if (latestSubscription) {
+      const subscriptionItem = latestSubscription.items.data[0];
       subscriptionStatus = resolveSubscriptionState(latestSubscription.status);
-      currentPlan = latestSubscription.items.data[0]?.price?.id || "";
+      currentPlan = subscriptionItem?.price?.id || "";
       currentProductId =
-        typeof latestSubscription.items.data[0]?.price?.product === "string"
-          ? latestSubscription.items.data[0].price.product
-          : latestSubscription.items.data[0]?.price?.product?.id || "";
-      currentPeriodEnd = latestSubscription.current_period_end
-        ? new Date(latestSubscription.current_period_end * 1000)
+        typeof subscriptionItem?.price?.product === "string"
+          ? subscriptionItem.price.product
+          : subscriptionItem?.price?.product?.id || "";
+      currentPeriodEnd = subscriptionItem?.current_period_end
+        ? new Date(subscriptionItem.current_period_end * 1000)
         : null;
     }
 

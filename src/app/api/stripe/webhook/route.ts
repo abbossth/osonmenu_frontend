@@ -14,11 +14,12 @@ async function updateUserFromSubscription(subscription: Stripe.Subscription) {
   const user = await UserModel.findOne({ stripeCustomerId: customerId });
   if (!user) return;
 
-  const priceId = subscription.items.data[0]?.price?.id || "";
+  const subscriptionItem = subscription.items.data[0];
+  const priceId = subscriptionItem?.price?.id || "";
   user.subscriptionStatus = resolveSubscriptionState(subscription.status);
   user.currentPlan = priceId;
-  user.currentPeriodEnd = subscription.current_period_end
-    ? new Date(subscription.current_period_end * 1000)
+  user.currentPeriodEnd = subscriptionItem?.current_period_end
+    ? new Date(subscriptionItem.current_period_end * 1000)
     : null;
   await user.save();
 }
@@ -60,10 +61,11 @@ export async function POST(request: NextRequest) {
         if (userId) {
           const user = await UserModel.findById(userId);
           if (user) {
+            const subscriptionItem = subscription.items.data[0];
             user.subscriptionStatus = resolveSubscriptionState(subscription.status);
-            user.currentPlan = subscription.items.data[0]?.price?.id || "";
-            user.currentPeriodEnd = subscription.current_period_end
-              ? new Date(subscription.current_period_end * 1000)
+            user.currentPlan = subscriptionItem?.price?.id || "";
+            user.currentPeriodEnd = subscriptionItem?.current_period_end
+              ? new Date(subscriptionItem.current_period_end * 1000)
               : null;
             await user.save();
           }
