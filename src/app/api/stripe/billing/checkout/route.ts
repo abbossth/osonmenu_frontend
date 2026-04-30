@@ -40,6 +40,18 @@ export async function POST(request: NextRequest) {
     if (!allowedPriceIds.has(priceId)) {
       return NextResponse.json({ error: "Invalid priceId" }, { status: 400 });
     }
+    await connectToMongoDB();
+    const establishment = await findUserEstablishment(slug, userId);
+    if (!establishment) return NextResponse.json({ error: "Establishment not found" }, { status: 404 });
+
+    const ownerFirebaseUid = establishment.ownerId || establishment.userId;
+    if (ownerFirebaseUid !== userId) {
+      return NextResponse.json({ error: "Only owner can manage billing" }, { status: 403 });
+    }
+
+    const ownerUser = await UserModel.findOne({ firebaseUid: ownerFirebaseUid });
+    if (!ownerUser) return NextResponse.json({ error: "Owner user not found" }, { status: 404 });
+
     let preferredCurrency: string | null = null;
     if (ownerUser.stripeCustomerId) {
       const subscriptions = await stripe.subscriptions.list({
@@ -60,18 +72,6 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-
-    await connectToMongoDB();
-    const establishment = await findUserEstablishment(slug, userId);
-    if (!establishment) return NextResponse.json({ error: "Establishment not found" }, { status: 404 });
-
-    const ownerFirebaseUid = establishment.ownerId || establishment.userId;
-    if (ownerFirebaseUid !== userId) {
-      return NextResponse.json({ error: "Only owner can manage billing" }, { status: 403 });
-    }
-
-    const ownerUser = await UserModel.findOne({ firebaseUid: ownerFirebaseUid });
-    if (!ownerUser) return NextResponse.json({ error: "Owner user not found" }, { status: 404 });
 
     let customerId = (ownerUser.stripeCustomerId || "").trim();
     if (!customerId) {
