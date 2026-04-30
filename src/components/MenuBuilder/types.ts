@@ -64,6 +64,7 @@ export type MenuCategory = {
 export type MenuGroup = {
   id: string;
   name: string;
+  nameI18n?: MenuLocalizedText;
   order?: number;
   isVisible?: boolean;
   categories: MenuCategory[];
@@ -84,7 +85,9 @@ export type MenuPlace = {
   guestsCanOrder: boolean;
   hideMenuButtons: boolean;
   country: string;
+  countryI18n?: MenuLocalizedText;
   city: string;
+  cityI18n?: MenuLocalizedText;
   address: string;
   googleMapsLink: string;
   yandexMapsLink?: string;
@@ -95,6 +98,7 @@ export type MenuPlace = {
   tripAdvisor: string;
   googleReviews: string;
   additionalInfo: string;
+  additionalInfoI18n?: MenuLocalizedText;
   currency: "UZS" | "USD";
   language: "uz" | "ru" | "en";
   enabledLanguages?: Array<"uz" | "ru" | "en">;

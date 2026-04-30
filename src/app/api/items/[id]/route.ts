@@ -44,27 +44,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       addonIds?: string[];
     };
     const slug = normalizeSlug(body.slug);
-    const name = normalizeName(body.name);
-    const nameI18n = {
-      uz: normalizeName(body.nameI18n?.uz ?? name),
-      ru: normalizeName(body.nameI18n?.ru ?? name),
-      en: normalizeName(body.nameI18n?.en ?? name),
-    };
-    const description = typeof body.description === "string" ? body.description.trim() : "";
-    const descriptionI18n = {
-      uz: normalizeName(body.descriptionI18n?.uz ?? description),
-      ru: normalizeName(body.descriptionI18n?.ru ?? description),
-      en: normalizeName(body.descriptionI18n?.en ?? description),
-    };
-    const price = normalizePrice(body.price);
-    const imageUrl = typeof body.imageUrl === "string" ? body.imageUrl : "";
-    const badge = normalizeBadge(body.badge);
-    const isVisible = typeof body.isVisible === "boolean" ? body.isVisible : true;
-    const isAvailable = typeof body.isAvailable === "boolean" ? body.isAvailable : true;
-    const addonIds = Array.isArray(body.addonIds)
-      ? body.addonIds.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0)
-      : [];
-    if (!slug || !name || Number.isNaN(price)) {
+    if (!slug) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
 
@@ -79,6 +59,48 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
     const item = category.items.id(itemObjectId);
     if (!item) return NextResponse.json({ error: "Item not found" }, { status: 404 });
+    const name = normalizeName(body.name) || item.name;
+    const nameI18n = {
+      uz:
+        typeof body.nameI18n?.uz === "string"
+          ? normalizeName(body.nameI18n.uz)
+          : normalizeName(item.nameI18n?.uz ?? name),
+      ru:
+        typeof body.nameI18n?.ru === "string"
+          ? normalizeName(body.nameI18n.ru)
+          : normalizeName(item.nameI18n?.ru ?? name),
+      en:
+        typeof body.nameI18n?.en === "string"
+          ? normalizeName(body.nameI18n.en)
+          : normalizeName(item.nameI18n?.en ?? name),
+    };
+    const description =
+      typeof body.description === "string" ? body.description.trim() : item.description || "";
+    const descriptionI18n = {
+      uz:
+        typeof body.descriptionI18n?.uz === "string"
+          ? normalizeName(body.descriptionI18n.uz)
+          : normalizeName(item.descriptionI18n?.uz ?? description),
+      ru:
+        typeof body.descriptionI18n?.ru === "string"
+          ? normalizeName(body.descriptionI18n.ru)
+          : normalizeName(item.descriptionI18n?.ru ?? description),
+      en:
+        typeof body.descriptionI18n?.en === "string"
+          ? normalizeName(body.descriptionI18n.en)
+          : normalizeName(item.descriptionI18n?.en ?? description),
+    };
+    const parsedPrice = normalizePrice(body.price);
+    const price = Number.isNaN(parsedPrice) ? item.price : parsedPrice;
+    const imageUrl = typeof body.imageUrl === "string" ? body.imageUrl : item.imageUrl || "";
+    const badge = body.badge === undefined ? item.badge : normalizeBadge(body.badge);
+    const isVisible = typeof body.isVisible === "boolean" ? body.isVisible : Boolean(item.isVisible);
+    const isAvailable = typeof body.isAvailable === "boolean" ? body.isAvailable : Boolean(item.isAvailable);
+    const addonIds = Array.isArray(body.addonIds)
+      ? body.addonIds.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0)
+      : Array.isArray(item.addonIds)
+        ? item.addonIds
+        : [];
 
     item.name = name;
     item.nameI18n = nameI18n;

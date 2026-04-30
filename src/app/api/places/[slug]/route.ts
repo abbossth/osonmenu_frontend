@@ -7,6 +7,18 @@ function str(value: unknown, fallback = "") {
   return typeof value === "string" ? value.trim() : fallback;
 }
 
+function normalizeI18n(
+  value: unknown,
+  fallback: { uz: string; ru: string; en: string },
+) {
+  const source = typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
+  return {
+    uz: str(source.uz, fallback.uz),
+    ru: str(source.ru, fallback.ru),
+    en: str(source.en, fallback.en),
+  };
+}
+
 export async function PATCH(request: NextRequest, { params }: Params) {
   try {
     const userId = await verifyUserId(request);
@@ -33,7 +45,17 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     place.guestsCanOrder = typeof body.guestsCanOrder === "boolean" ? body.guestsCanOrder : Boolean(place.guestsCanOrder);
     place.hideMenuButtons = typeof body.hideMenuButtons === "boolean" ? body.hideMenuButtons : Boolean(place.hideMenuButtons);
     place.country = str(body.country, place.country || "");
+    place.countryI18n = normalizeI18n(body.countryI18n, {
+      uz: str(place.countryI18n?.uz, place.country || ""),
+      ru: str(place.countryI18n?.ru, place.country || ""),
+      en: str(place.countryI18n?.en, place.country || ""),
+    });
     place.city = str(body.city, place.city || "");
+    place.cityI18n = normalizeI18n(body.cityI18n, {
+      uz: str(place.cityI18n?.uz, place.city || ""),
+      ru: str(place.cityI18n?.ru, place.city || ""),
+      en: str(place.cityI18n?.en, place.city || ""),
+    });
     place.address = str(body.address, place.address || "");
     place.googleMapsLink = str(body.googleMapsLink, place.googleMapsLink || "");
     // Use strict:false so the field is persisted even if a stale dev model cache is still active.
@@ -45,6 +67,11 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     place.tripAdvisor = str(body.tripAdvisor, place.tripAdvisor || "");
     place.googleReviews = str(body.googleReviews, place.googleReviews || "");
     place.additionalInfo = str(body.additionalInfo, place.additionalInfo || "");
+    place.additionalInfoI18n = normalizeI18n(body.additionalInfoI18n, {
+      uz: str(place.additionalInfoI18n?.uz, place.additionalInfo || ""),
+      ru: str(place.additionalInfoI18n?.ru, place.additionalInfo || ""),
+      en: str(place.additionalInfoI18n?.en, place.additionalInfo || ""),
+    });
 
     await place.save();
 
@@ -65,7 +92,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         guestsCanOrder: Boolean(place.guestsCanOrder),
         hideMenuButtons: Boolean(place.hideMenuButtons),
         country: place.country || "",
+        countryI18n: place.countryI18n || { uz: place.country || "", ru: place.country || "", en: place.country || "" },
         city: place.city || "",
+        cityI18n: place.cityI18n || { uz: place.city || "", ru: place.city || "", en: place.city || "" },
         address: place.address || "",
         googleMapsLink: place.googleMapsLink || "",
         yandexMapsLink: place.yandexMapsLink || "",
@@ -76,6 +105,12 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         tripAdvisor: place.tripAdvisor || "",
         googleReviews: place.googleReviews || "",
         additionalInfo: place.additionalInfo || "",
+        additionalInfoI18n:
+          place.additionalInfoI18n || {
+            uz: place.additionalInfo || "",
+            ru: place.additionalInfo || "",
+            en: place.additionalInfo || "",
+          },
       },
     });
   } catch (error) {

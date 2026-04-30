@@ -24,16 +24,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const slug = normalizeSlug(body.slug);
     const menuId = typeof body.menuId === "string" ? body.menuId.trim() || "main" : "main";
     const menuName = normalizeName(body.menuName) || "Menu";
-    const name = normalizeName(body.name);
-    const nameI18n = {
-      uz: normalizeName(body.nameI18n?.uz ?? name),
-      ru: normalizeName(body.nameI18n?.ru ?? name),
-      en: normalizeName(body.nameI18n?.en ?? name),
-    };
-    const description = typeof body.description === "string" ? body.description.trim() : "";
-    const imageUrl = typeof body.imageUrl === "string" ? body.imageUrl.trim() : "";
     const isVisible = typeof body.isVisible === "boolean" ? body.isVisible : true;
-    if (!slug || !name) return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    if (!slug) return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
 
     const categoryObjectId = asObjectId(id);
     if (!categoryObjectId) return NextResponse.json({ error: "Invalid category id" }, { status: 400 });
@@ -46,6 +38,24 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
     const category = establishment.categories.id(categoryObjectId);
     if (!category) return NextResponse.json({ error: "Category not found" }, { status: 404 });
+    const name = normalizeName(body.name) || category.name;
+    const nameI18n = {
+      uz:
+        typeof body.nameI18n?.uz === "string"
+          ? normalizeName(body.nameI18n.uz)
+          : normalizeName(category.nameI18n?.uz ?? name),
+      ru:
+        typeof body.nameI18n?.ru === "string"
+          ? normalizeName(body.nameI18n.ru)
+          : normalizeName(category.nameI18n?.ru ?? name),
+      en:
+        typeof body.nameI18n?.en === "string"
+          ? normalizeName(body.nameI18n.en)
+          : normalizeName(category.nameI18n?.en ?? name),
+    };
+    const description =
+      typeof body.description === "string" ? body.description.trim() : category.description || "";
+    const imageUrl = typeof body.imageUrl === "string" ? body.imageUrl.trim() : category.imageUrl || "";
     category.name = name;
     category.menuId = menuId;
     category.menuName = menuName;

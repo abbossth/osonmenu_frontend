@@ -516,7 +516,18 @@
         },
         "locales": {
           "primary": "Asosiy",
-          "makePrimary": "Asosiy qilish"
+          "makePrimary": "Asosiy qilish",
+          "mainLanguage": "Asosiy til",
+          "addAnother": "Yana til qo'shish",
+          "addLanguage": "Til qo'shish +",
+          "noMoreLanguages": "Boshqa til qolmadi",
+          "unsaved": "Saqlanmagan o'zgarishlar mavjud",
+          "saved": "Tillar yangilandi",
+          "saveError": "Tillarni yangilab bo'lmadi",
+          "remove": "O'chirish",
+          "cancel": "Bekor qilish",
+          "removeTitle": "Tilni o'chirish: {language}",
+          "removeDescription": "Bu til o'chirilsa, shu tilga xos bo'lgan barcha menyu matnlari butunlay o'chiriladi."
         },
         "scheduled": {
           "targetName": "Nomi",

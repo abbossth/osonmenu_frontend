@@ -15,7 +15,9 @@ export type EstablishmentDocument = {
   guestsCanOrder?: boolean;
   hideMenuButtons?: boolean;
   country?: string;
+  countryI18n?: { uz?: string; ru?: string; en?: string };
   city?: string;
+  cityI18n?: { uz?: string; ru?: string; en?: string };
   address?: string;
   googleMapsLink?: string;
   yandexMapsLink?: string;
@@ -26,6 +28,7 @@ export type EstablishmentDocument = {
   tripAdvisor?: string;
   googleReviews?: string;
   additionalInfo?: string;
+  additionalInfoI18n?: { uz?: string; ru?: string; en?: string };
   ownerNote?: string;
   currency: "UZS" | "USD";
   language: "uz" | "ru" | "en";
@@ -87,6 +90,7 @@ export type EstablishmentDocument = {
   menus?: {
     id: string;
     name: string;
+    nameI18n?: { uz?: string; ru?: string; en?: string };
     order: number;
     isVisible?: boolean;
   }[];
@@ -199,7 +203,17 @@ const establishmentSchema = new Schema<EstablishmentDocument>(
     guestsCanOrder: { type: Boolean, default: true },
     hideMenuButtons: { type: Boolean, default: false },
     country: { type: String, default: "", trim: true },
+    countryI18n: {
+      uz: { type: String, default: "", trim: true },
+      ru: { type: String, default: "", trim: true },
+      en: { type: String, default: "", trim: true },
+    },
     city: { type: String, default: "", trim: true },
+    cityI18n: {
+      uz: { type: String, default: "", trim: true },
+      ru: { type: String, default: "", trim: true },
+      en: { type: String, default: "", trim: true },
+    },
     address: { type: String, default: "", trim: true },
     googleMapsLink: { type: String, default: "", trim: true },
     yandexMapsLink: { type: String, default: "", trim: true },
@@ -210,6 +224,11 @@ const establishmentSchema = new Schema<EstablishmentDocument>(
     tripAdvisor: { type: String, default: "", trim: true },
     googleReviews: { type: String, default: "", trim: true },
     additionalInfo: { type: String, default: "Here you can add any additional information about your QR code menu", trim: true },
+    additionalInfoI18n: {
+      uz: { type: String, default: "", trim: true },
+      ru: { type: String, default: "", trim: true },
+      en: { type: String, default: "", trim: true },
+    },
     ownerNote: { type: String, default: "", trim: true },
     currency: { type: String, required: true, enum: ["UZS", "USD"] },
     language: { type: String, required: true, enum: ["uz", "ru", "en"] },
@@ -237,6 +256,11 @@ const establishmentSchema = new Schema<EstablishmentDocument>(
           {
             id: { type: String, required: true, trim: true },
             name: { type: String, required: true, trim: true },
+            nameI18n: {
+              uz: { type: String, default: "", trim: true },
+              ru: { type: String, default: "", trim: true },
+              en: { type: String, default: "", trim: true },
+            },
             order: { type: Number, required: true, default: 0 },
             isVisible: { type: Boolean, default: true },
           },

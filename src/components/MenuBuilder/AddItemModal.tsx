@@ -27,6 +27,8 @@ type AddItemModalProps = {
     requiredPrice: string;
     uploadImage: string;
   };
+  enabledLanguages?: Array<"uz" | "ru" | "en">;
+  primaryLanguage?: "uz" | "ru" | "en";
   onClose: () => void;
   onSave: (payload: {
     name: string;
@@ -39,9 +41,19 @@ type AddItemModalProps = {
   }) => Promise<void>;
 };
 
-export function AddItemModal({ open, item, labels, onClose, onSave }: AddItemModalProps) {
+export function AddItemModal({
+  open,
+  item,
+  labels,
+  enabledLanguages = ["uz", "ru", "en"],
+  primaryLanguage = "uz",
+  onClose,
+  onSave,
+}: AddItemModalProps) {
   const [name, setName] = useState("");
+  const [nameI18n, setNameI18n] = useState<MenuLocalizedText>({ uz: "", ru: "", en: "" });
   const [description, setDescription] = useState("");
+  const [descriptionI18n, setDescriptionI18n] = useState<MenuLocalizedText>({ uz: "", ru: "", en: "" });
   const [price, setPrice] = useState("");
   const [badge, setBadge] = useState<MenuBadge>(null);
   const [imageUrl, setImageUrl] = useState("");
@@ -57,7 +69,11 @@ export function AddItemModal({ open, item, labels, onClose, onSave }: AddItemMod
     if (!open) return;
     const frame = window.requestAnimationFrame(() => {
       setName(item?.name ?? "");
+      setNameI18n(item?.nameI18n ?? { uz: item?.name ?? "", ru: item?.name ?? "", en: item?.name ?? "" });
       setDescription(item?.description ?? "");
+      setDescriptionI18n(
+        item?.descriptionI18n ?? { uz: item?.description ?? "", ru: item?.description ?? "", en: item?.description ?? "" },
+      );
       setPrice(item ? String(item.price) : "");
       setBadge(item?.badge ?? null);
       setImageUrl(item?.imageUrl ?? "");
@@ -69,6 +85,10 @@ export function AddItemModal({ open, item, labels, onClose, onSave }: AddItemMod
   }, [open, item]);
 
   const preview = useMemo(() => imageUrl.trim(), [imageUrl]);
+  const secondaryLanguages = useMemo(
+    () => enabledLanguages.filter((entry) => entry !== primaryLanguage),
+    [enabledLanguages, primaryLanguage],
+  );
 
   async function handleFileChange(file: File | null) {
     if (!file) return;
@@ -88,18 +108,22 @@ export function AddItemModal({ open, item, labels, onClose, onSave }: AddItemMod
     setError(null);
     const trimmedName = name.trim();
     const trimmedDescription = description.trim();
-    const nameI18n = {
-      uz: trimmedName,
-      ru: trimmedName,
-      en: trimmedName,
+    const normalizedNameI18n = {
+      uz: nameI18n.uz.trim(),
+      ru: nameI18n.ru.trim(),
+      en: nameI18n.en.trim(),
     };
-    const descriptionI18n = {
-      uz: trimmedDescription,
-      ru: trimmedDescription,
-      en: trimmedDescription,
+    const normalizedDescriptionI18n = {
+      uz: descriptionI18n.uz.trim(),
+      ru: descriptionI18n.ru.trim(),
+      en: descriptionI18n.en.trim(),
     };
+    const resolvedName =
+      trimmedName || normalizedNameI18n.uz || normalizedNameI18n.ru || normalizedNameI18n.en;
+    const resolvedDescription =
+      trimmedDescription || normalizedDescriptionI18n.uz || normalizedDescriptionI18n.ru || normalizedDescriptionI18n.en;
     const parsedPrice = Number(price);
-    if (!trimmedName) {
+    if (!resolvedName) {
       setError(labels.requiredName);
       return;
     }
@@ -110,10 +134,10 @@ export function AddItemModal({ open, item, labels, onClose, onSave }: AddItemMod
     try {
       setLoading(true);
       await onSave({
-        name: trimmedName,
-        nameI18n,
-        description: trimmedDescription,
-        descriptionI18n,
+        name: resolvedName,
+        nameI18n: normalizedNameI18n,
+        description: resolvedDescription,
+        descriptionI18n: normalizedDescriptionI18n,
         price: parsedPrice,
         imageUrl: preview,
         badge,
@@ -178,6 +202,19 @@ export function AddItemModal({ open, item, labels, onClose, onSave }: AddItemMod
                   />
                 </div>
               </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {secondaryLanguages.map((langCode) => (
+                  <input
+                    key={`item-name-${langCode}`}
+                    value={nameI18n[langCode]}
+                    onChange={(event) =>
+                      setNameI18n((current) => ({ ...current, [langCode]: event.target.value }))
+                    }
+                    placeholder={`Name (${langCode.toUpperCase()})`}
+                    className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
+                  />
+                ))}
+              </div>
 
               <div>
                 <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">{labels.description}</label>
@@ -187,6 +224,19 @@ export function AddItemModal({ open, item, labels, onClose, onSave }: AddItemMod
                   onChange={(event) => setDescription(event.target.value)}
                   className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
                 />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {secondaryLanguages.map((langCode) => (
+                  <input
+                    key={`item-description-${langCode}`}
+                    value={descriptionI18n[langCode]}
+                    onChange={(event) =>
+                      setDescriptionI18n((current) => ({ ...current, [langCode]: event.target.value }))
+                    }
+                    placeholder={`Description (${langCode.toUpperCase()})`}
+                    className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
+                  />
+                ))}
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">

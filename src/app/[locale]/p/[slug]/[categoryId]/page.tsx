@@ -13,6 +13,8 @@ import { useAuth } from "@/components/providers/auth-provider";
 import type { MenuCategory, MenuGroup, MenuItem, MenuLocalizedText, MenuPlace } from "@/components/MenuBuilder/types";
 
 type MenuResponse = { place: MenuPlace; isOwner?: boolean; canEdit?: boolean };
+type LocaleCode = "uz" | "ru" | "en";
+const ALL_LOCALES: LocaleCode[] = ["uz", "ru", "en"];
 
 function sortCategories(categories: MenuCategory[]) {
   return [...categories]
@@ -24,10 +26,12 @@ function buildMenus(categories: MenuCategory[], fallbackMenus: MenuGroup[] = [])
   const grouped = new Map<string, MenuGroup>();
   for (const category of categories) {
     const menuId = category.menuId || "main";
+    const fallbackMenu = fallbackMenus.find((menu) => menu.id === menuId);
     if (!grouped.has(menuId)) {
       grouped.set(menuId, {
         id: menuId,
-        name: category.menuName || fallbackMenus.find((menu) => menu.id === menuId)?.name || "Menu",
+        name: category.menuName || fallbackMenu?.name || "Menu",
+        nameI18n: fallbackMenu?.nameI18n,
         categories: [],
       });
     }
@@ -59,6 +63,7 @@ export default function CategoryItemsPage() {
   const slug = typeof params.slug === "string" ? params.slug : "";
   const categoryId = typeof params.categoryId === "string" ? params.categoryId : "";
   const locale = params.locale === "ru" || params.locale === "en" ? params.locale : "uz";
+  const [contentLanguage, setContentLanguage] = useState<LocaleCode>("uz");
 
   const [place, setPlace] = useState<MenuPlace | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
@@ -89,9 +94,16 @@ export default function CategoryItemsPage() {
   const isAdminMode = canEdit;
   const isLightTheme = (place?.colorTheme ?? "light") === "light";
   const accentColor = place?.color?.trim() || "#f7906c";
+  const enabledLanguages = useMemo(
+    () =>
+      Array.isArray(place?.enabledLanguages) && place.enabledLanguages.length
+        ? place.enabledLanguages
+        : ALL_LOCALES,
+    [place?.enabledLanguages],
+  );
   const address = place?.address?.trim() ?? "";
-  const city = place?.city?.trim() ?? "";
-  const country = place?.country?.trim() ?? "";
+  const city = pickLocalized(contentLanguage, place?.cityI18n, place?.city ?? "").trim();
+  const country = pickLocalized(contentLanguage, place?.countryI18n, place?.country ?? "").trim();
   const phone = place?.phone?.trim() ?? "";
   const wifiPassword = place?.wifiPassword?.trim() ?? "";
   const locationLine = [address, city, country].filter(Boolean).join(", ");
@@ -107,6 +119,11 @@ export default function CategoryItemsPage() {
     { label: "TripAdvisor", icon: faCompass, value: place?.tripAdvisor ?? "" },
     { label: "Google Reviews", icon: faStar, value: place?.googleReviews ?? "" },
   ].filter((entry) => entry.value.trim().length > 0);
+  const languageLabel: Record<LocaleCode, string> = {
+    uz: "Uzbek (O'zbek)",
+    ru: "Russian (Русский)",
+    en: "English (English)",
+  };
 
   const filteredItems = useMemo(() => {
     if (!activeCategory) return [];
@@ -115,10 +132,10 @@ export default function CategoryItemsPage() {
     if (!query) return all;
     return all.filter(
       (item) =>
-        pickLocalized(locale, item.nameI18n, item.name).toLowerCase().includes(query) ||
-        pickLocalized(locale, item.descriptionI18n, item.description).toLowerCase().includes(query),
+        pickLocalized(contentLanguage, item.nameI18n, item.name).toLowerCase().includes(query) ||
+        pickLocalized(contentLanguage, item.descriptionI18n, item.description).toLowerCase().includes(query),
     );
-  }, [activeCategory, locale, searchQuery]);
+  }, [activeCategory, contentLanguage, searchQuery]);
 
   useEffect(() => {
     async function load() {
@@ -139,6 +156,17 @@ export default function CategoryItemsPage() {
         if (!res.ok) throw new Error("Failed to fetch menu");
         const data = (await res.json()) as MenuResponse;
         setPlace(data.place);
+        const availableLanguages = ALL_LOCALES;
+        const paramsFromUrl = new URLSearchParams(window.location.search);
+        const langFromUrl = paramsFromUrl.get("lang");
+        const preferredLanguage =
+          (langFromUrl === "uz" || langFromUrl === "ru" || langFromUrl === "en") &&
+          availableLanguages.includes(langFromUrl)
+            ? langFromUrl
+            : availableLanguages.includes(data.place.language)
+              ? data.place.language
+              : availableLanguages[0] || "uz";
+        setContentLanguage(preferredLanguage);
         setCanEdit(Boolean(data.canEdit || data.isOwner));
         setMenuOrder((data.place.menus ?? []).map((menu) => menu.id));
       } catch (loadError) {
@@ -150,6 +178,12 @@ export default function CategoryItemsPage() {
     }
     void load();
   }, [firebaseUser, slug]);
+
+  useEffect(() => {
+    if (!ALL_LOCALES.includes(contentLanguage)) {
+      setContentLanguage("uz");
+    }
+  }, [contentLanguage]);
 
   useEffect(() => {
     async function verifyEditAccess() {
@@ -189,7 +223,7 @@ export default function CategoryItemsPage() {
 
   function onMenuSelect(menuId: string) {
     setActiveMenuId(menuId);
-    router.push(`/${locale}/p/${slug}?menu=${menuId}`);
+    router.push(`/${locale}/p/${slug}?menu=${menuId}&lang=${contentLanguage}`);
   }
 
   async function createMenu(insertSide: "left" | "right") {
@@ -440,6 +474,23 @@ export default function CategoryItemsPage() {
                 </div>
               </div>
             ) : null}
+            <div className="absolute bottom-3 right-3 z-30">
+              <select
+                value={contentLanguage}
+                onChange={(event) => {
+                  const nextLang = event.target.value as LocaleCode;
+                  setContentLanguage(nextLang);
+                  router.replace(`/${locale}/p/${slug}/${categoryId}?lang=${nextLang}`);
+                }}
+                className="rounded-lg bg-white/95 px-2 py-1 text-xs font-semibold text-neutral-900 shadow outline-none"
+              >
+                {ALL_LOCALES.map((langCode) => (
+                  <option key={langCode} value={langCode}>
+                    {languageLabel[langCode]}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className={`mx-1 -mt-5 rounded-[26px] px-2 pt-8 sm:mx-2 sm:px-3 sm:pt-9 ${isLightTheme ? "bg-white" : "bg-[#121212]"}`}>
@@ -519,15 +570,15 @@ export default function CategoryItemsPage() {
                 ))}
               </div>
             ) : null}
-            {place?.additionalInfo?.trim() ? (
+            {pickLocalized(contentLanguage, place?.additionalInfoI18n, place?.additionalInfo ?? "").trim() ? (
               <p className={`mt-2 text-sm ${isLightTheme ? "text-neutral-700" : "text-neutral-300"}`}>
-                {place.additionalInfo}
+                {pickLocalized(contentLanguage, place?.additionalInfoI18n, place?.additionalInfo ?? "")}
               </p>
             ) : null}
 
             <div className="mt-2">
               <MenuTabs
-                menus={orderedMenus.map((menu) => ({ id: menu.id, name: menu.name }))}
+                menus={orderedMenus.map((menu) => ({ id: menu.id, name: pickLocalized(contentLanguage, menu.nameI18n, menu.name) }))}
                 activeMenuId={resolvedActiveMenuId}
                 accentColor={accentColor}
                 isLight={isLightTheme}
@@ -556,7 +607,7 @@ export default function CategoryItemsPage() {
 
             <div className={`mt-4 space-y-4 ${isAdminMode ? "pb-20" : "pb-4"}`}>
               <h3 className="text-xl font-semibold text-neutral-100">
-                {activeCategory ? pickLocalized(locale, activeCategory.nameI18n, activeCategory.name) : "Category"}
+                {activeCategory ? pickLocalized(contentLanguage, activeCategory.nameI18n, activeCategory.name) : "Category"}
               </h3>
               {filteredItems.length === 0 ? (
                 <div className="space-y-3">
@@ -612,8 +663,8 @@ export default function CategoryItemsPage() {
                     }}
                     items={filteredItems.map((item) => ({
                       id: item._id,
-                      name: pickLocalized(locale, item.nameI18n, item.name),
-                      description: pickLocalized(locale, item.descriptionI18n, item.description),
+                      name: pickLocalized(contentLanguage, item.nameI18n, item.name),
+                      description: pickLocalized(contentLanguage, item.descriptionI18n, item.description),
                       imageUrl: item.imageUrl,
                       price: item.price,
                       badge: item.badge,
@@ -634,6 +685,8 @@ export default function CategoryItemsPage() {
             setEditingItem(null);
           }}
           item={editingItem}
+          enabledLanguages={enabledLanguages}
+          primaryLanguage={place?.language ?? "uz"}
           onSave={saveItem}
           labels={{
             addTitle: "Add item",

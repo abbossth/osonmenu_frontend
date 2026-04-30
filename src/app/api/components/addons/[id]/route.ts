@@ -25,13 +25,23 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const addon = establishment.addons.find((entry: { id: string }) => entry.id === id);
     if (!addon) return NextResponse.json({ error: "Addon not found" }, { status: 404 });
 
-    addon.name = normalizeName(body.name) || addon.name;
+    const name = normalizeName(body.name) || addon.name;
+    addon.name = name;
     addon.nameI18n = {
-      uz: normalizeName(body.nameI18n?.uz ?? addon.name),
-      ru: normalizeName(body.nameI18n?.ru ?? addon.name),
-      en: normalizeName(body.nameI18n?.en ?? addon.name),
+      uz:
+        typeof body.nameI18n?.uz === "string"
+          ? normalizeName(body.nameI18n.uz)
+          : normalizeName(addon.nameI18n?.uz ?? name),
+      ru:
+        typeof body.nameI18n?.ru === "string"
+          ? normalizeName(body.nameI18n.ru)
+          : normalizeName(addon.nameI18n?.ru ?? name),
+      en:
+        typeof body.nameI18n?.en === "string"
+          ? normalizeName(body.nameI18n.en)
+          : normalizeName(addon.nameI18n?.en ?? name),
     };
-    addon.type = body.type === "multiple" ? "multiple" : "single";
+    addon.type = body.type === "multiple" ? "multiple" : body.type === "single" ? "single" : addon.type;
     addon.isVisible = typeof body.isVisible === "boolean" ? body.isVisible : addon.isVisible;
     if (Array.isArray(body.options)) {
       addon.options = body.options.map((option, index) => {

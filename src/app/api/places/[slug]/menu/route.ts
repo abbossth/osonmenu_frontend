@@ -22,6 +22,10 @@ function normalizeI18n(value: unknown, fallback = "") {
   };
 }
 
+function normalizeMenuNameI18n(value: unknown, fallback = "") {
+  return normalizeI18n(value, fallback);
+}
+
 function normalizeCategories(categories: unknown) {
   if (!Array.isArray(categories)) return [];
 
@@ -130,17 +134,18 @@ function normalizeScheduledPrices(scheduledPrices: unknown) {
 
 function buildMenus(
   categories: ReturnType<typeof normalizeCategories>,
-  persistedMenus: Array<{ id: string; name: string; order?: number; isVisible?: boolean }> = [],
-): Array<{ id: string; name: string; order: number; isVisible: boolean; categories: ReturnType<typeof normalizeCategories> }> {
+  persistedMenus: Array<{ id: string; name: string; nameI18n?: { uz?: string; ru?: string; en?: string }; order?: number; isVisible?: boolean }> = [],
+): Array<{ id: string; name: string; nameI18n: { uz: string; ru: string; en: string }; order: number; isVisible: boolean; categories: ReturnType<typeof normalizeCategories> }> {
   const menuMap = new Map<
     string,
-    { id: string; name: string; order: number; isVisible: boolean; categories: ReturnType<typeof normalizeCategories> }
+    { id: string; name: string; nameI18n: { uz: string; ru: string; en: string }; order: number; isVisible: boolean; categories: ReturnType<typeof normalizeCategories> }
   >();
   for (const menu of persistedMenus) {
     if (!menu?.id) continue;
     menuMap.set(menu.id, {
       id: menu.id,
       name: menu.name || "Menu",
+      nameI18n: normalizeMenuNameI18n(menu.nameI18n, menu.name || "Menu"),
       order: typeof menu.order === "number" ? menu.order : menuMap.size,
       isVisible: typeof menu.isVisible === "boolean" ? menu.isVisible : true,
       categories: [],
@@ -152,6 +157,7 @@ function buildMenus(
       menuMap.set(menuId, {
         id: menuId,
         name: category.menuName || "Menu",
+        nameI18n: normalizeMenuNameI18n(undefined, category.menuName || "Menu"),
         order: menuMap.size,
         isVisible: true,
         categories: [],
@@ -160,6 +166,31 @@ function buildMenus(
     menuMap.get(menuId)?.categories.push(category);
   }
   return Array.from(menuMap.values()).sort((a, b) => a.order - b.order);
+}
+
+function mergePersistedMenus(
+  menuDocs: Array<{ id: string; name: string; nameI18n?: { uz?: string; ru?: string; en?: string }; order?: number; isVisible?: boolean }>,
+  embeddedMenus: Array<{ id: string; name: string; nameI18n?: { uz?: string; ru?: string; en?: string }; order?: number; isVisible?: boolean }>,
+) {
+  const merged = new Map<string, { id: string; name: string; nameI18n?: { uz?: string; ru?: string; en?: string }; order?: number; isVisible?: boolean }>();
+  for (const menu of embeddedMenus) {
+    if (!menu?.id) continue;
+    merged.set(menu.id, menu);
+  }
+  for (const menu of menuDocs) {
+    if (!menu?.id) continue;
+    const previous = merged.get(menu.id);
+    merged.set(menu.id, {
+      ...previous,
+      ...menu,
+      nameI18n: {
+        uz: typeof menu.nameI18n?.uz === "string" ? menu.nameI18n.uz : previous?.nameI18n?.uz,
+        ru: typeof menu.nameI18n?.ru === "string" ? menu.nameI18n.ru : previous?.nameI18n?.ru,
+        en: typeof menu.nameI18n?.en === "string" ? menu.nameI18n.en : previous?.nameI18n?.en,
+      },
+    });
+  }
+  return Array.from(merged.values());
 }
 
 export async function GET(request: NextRequest, { params }: Params) {
@@ -308,27 +339,24 @@ export async function GET(request: NextRequest, { params }: Params) {
         })()
       : embeddedCategories;
 
-    const menus = hasEntityCategories
-      ? buildMenus(
-          categories,
-          menuDocs.map((menu, index) => ({
-            id: menu.id,
-            name: menu.name,
-            order: normalizeOrder(menu.order, index),
-            isVisible: typeof menu.isVisible === "boolean" ? menu.isVisible : true,
-          })),
-        )
-      : buildMenus(
-          categories,
-          Array.isArray(establishment.menus)
-            ? establishment.menus.map((menu: { id: string; name: string; order?: number; isVisible?: boolean }) => ({
-                id: menu.id,
-                name: menu.name,
-                order: menu.order,
-                isVisible: menu.isVisible,
-              }))
-            : [],
-        );
+    const menuDocEntries = menuDocs.map((menu, index) => ({
+      id: menu.id,
+      name: menu.name,
+      nameI18n: normalizeMenuNameI18n(menu.nameI18n, menu.name),
+      order: normalizeOrder(menu.order, index),
+      isVisible: typeof menu.isVisible === "boolean" ? menu.isVisible : true,
+    }));
+    const embeddedMenuEntries = Array.isArray(establishment.menus)
+      ? establishment.menus.map((menu: { id: string; name: string; nameI18n?: { uz?: string; ru?: string; en?: string }; order?: number; isVisible?: boolean }) => ({
+          id: menu.id,
+          name: menu.name,
+          nameI18n: normalizeMenuNameI18n(menu.nameI18n, menu.name),
+          order: menu.order,
+          isVisible: menu.isVisible,
+        }))
+      : [];
+    const mergedPersistedMenus = mergePersistedMenus(menuDocEntries, embeddedMenuEntries);
+    const menus = buildMenus(categories, mergedPersistedMenus);
     const addons = normalizeAddons(establishment.addons);
     const scheduledPrices = normalizeScheduledPrices(establishment.scheduledPrices);
     const enabledLanguages = Array.isArray(establishment.enabledLanguages)
@@ -354,7 +382,9 @@ export async function GET(request: NextRequest, { params }: Params) {
         guestsCanOrder: typeof establishment.guestsCanOrder === "boolean" ? establishment.guestsCanOrder : true,
         hideMenuButtons: typeof establishment.hideMenuButtons === "boolean" ? establishment.hideMenuButtons : false,
         country: typeof establishment.country === "string" ? establishment.country : "",
+        countryI18n: normalizeI18n((rawEstablishment as Record<string, unknown>).countryI18n, typeof establishment.country === "string" ? establishment.country : ""),
         city: typeof establishment.city === "string" ? establishment.city : "",
+        cityI18n: normalizeI18n((rawEstablishment as Record<string, unknown>).cityI18n, typeof establishment.city === "string" ? establishment.city : ""),
         address: typeof establishment.address === "string" ? establishment.address : "",
         googleMapsLink: typeof establishment.googleMapsLink === "string" ? establishment.googleMapsLink : "",
         yandexMapsLink: typeof rawEstablishment.yandexMapsLink === "string" ? rawEstablishment.yandexMapsLink : "",
@@ -368,6 +398,10 @@ export async function GET(request: NextRequest, { params }: Params) {
           typeof establishment.additionalInfo === "string"
             ? establishment.additionalInfo
             : "",
+        additionalInfoI18n: normalizeI18n(
+          (rawEstablishment as Record<string, unknown>).additionalInfoI18n,
+          typeof establishment.additionalInfo === "string" ? establishment.additionalInfo : "",
+        ),
         currency: establishment.currency,
         language: establishment.language,
         enabledLanguages,

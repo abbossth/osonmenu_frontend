@@ -24,6 +24,8 @@ type CategoryFormState = {
   imageUrl: string;
   isVisible: boolean;
 };
+type LocaleCode = "uz" | "ru" | "en";
+const ALL_LOCALES: LocaleCode[] = ["uz", "ru", "en"];
 type EstablishmentFormState = {
   name: string;
   colorTheme: "light" | "dark";
@@ -37,7 +39,9 @@ type EstablishmentFormState = {
   guestsCanOrder: boolean;
   hideMenuButtons: boolean;
   country: string;
+  countryI18n: MenuLocalizedText;
   city: string;
+  cityI18n: MenuLocalizedText;
   address: string;
   googleMapsLink: string;
   yandexMapsLink: string;
@@ -48,9 +52,11 @@ type EstablishmentFormState = {
   tripAdvisor: string;
   googleReviews: string;
   additionalInfo: string;
+  additionalInfoI18n: MenuLocalizedText;
 };
 type MenuFormState = {
   name: string;
+  nameI18n: MenuLocalizedText;
   isVisible: boolean;
   insertSide: "left" | "right";
 };
@@ -67,10 +73,12 @@ function buildMenus(categories: MenuCategory[], fallbackMenus: MenuGroup[] = [])
 
   for (const category of categories) {
     const menuId = category.menuId || "main";
+    const fallbackMenu = fallbackMenus.find((menu) => menu.id === menuId);
     if (!grouped.has(menuId)) {
       grouped.set(menuId, {
         id: menuId,
-        name: category.menuName || fallbackMenus.find((menu) => menu.id === menuId)?.name || "Menu",
+        name: category.menuName || fallbackMenu?.name || "Menu",
+        nameI18n: fallbackMenu?.nameI18n,
         categories: [],
       });
     }
@@ -103,6 +111,11 @@ export default function PublicMenuPage() {
   const slug = typeof params.slug === "string" ? params.slug : "";
   const locale = params.locale === "ru" || params.locale === "en" ? params.locale : "uz";
   const menuFromQuery = searchParams.get("menu");
+  const langFromQueryRaw = searchParams.get("lang");
+  const langFromQuery: LocaleCode | null =
+    langFromQueryRaw === "uz" || langFromQueryRaw === "ru" || langFromQueryRaw === "en"
+      ? langFromQueryRaw
+      : null;
   const [place, setPlace] = useState<MenuPlace | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
@@ -118,8 +131,14 @@ export default function PublicMenuPage() {
   const [menuRenameOpen, setMenuRenameOpen] = useState(false);
   const [menuRenameId, setMenuRenameId] = useState<string | null>(null);
   const [menuRenameName, setMenuRenameName] = useState("");
+  const [menuRenameNameI18n, setMenuRenameNameI18n] = useState<MenuLocalizedText>({ uz: "", ru: "", en: "" });
   const [menuDeleteTarget, setMenuDeleteTarget] = useState<{ id: string; name: string } | null>(null);
-  const [menuForm, setMenuForm] = useState<MenuFormState>({ name: "", isVisible: true, insertSide: "right" });
+  const [menuForm, setMenuForm] = useState<MenuFormState>({
+    name: "",
+    nameI18n: { uz: "", ru: "", en: "" },
+    isVisible: true,
+    insertSide: "right",
+  });
   const [categoryEditorOpen, setCategoryEditorOpen] = useState(false);
   const [categoryToEdit, setCategoryToEdit] = useState<MenuCategory | null>(null);
   const [categoryToRemove, setCategoryToRemove] = useState<MenuCategory | null>(null);
@@ -153,7 +172,9 @@ export default function PublicMenuPage() {
     guestsCanOrder: true,
     hideMenuButtons: false,
     country: "",
+    countryI18n: { uz: "", ru: "", en: "" },
     city: "",
+    cityI18n: { uz: "", ru: "", en: "" },
     address: "",
     googleMapsLink: "",
     yandexMapsLink: "",
@@ -164,7 +185,9 @@ export default function PublicMenuPage() {
     tripAdvisor: "",
     googleReviews: "",
     additionalInfo: "",
+    additionalInfoI18n: { uz: "", ru: "", en: "" },
   });
+  const [contentLanguage, setContentLanguage] = useState<LocaleCode>("uz");
   const tempCategoryIdRef = useRef(0);
   const tempItemIdRef = useRef(0);
   const logoInputRef = useRef<HTMLInputElement | null>(null);
@@ -207,7 +230,7 @@ export default function PublicMenuPage() {
       });
       return categoryName.includes(query) || categoryDescription.includes(query) || itemMatches;
     });
-  }, [activeMenuCategories, searchQuery, locale]);
+  }, [activeMenuCategories, searchQuery, contentLanguage]);
   const resolvedActiveCategoryId =
     activeCategoryId && activeMenuCategories.some((category) => category._id === activeCategoryId)
       ? activeCategoryId
@@ -216,9 +239,25 @@ export default function PublicMenuPage() {
   const isAdminMode = canEdit;
   const isLightTheme = (place?.colorTheme ?? "light") === "light";
   const accentColor = place?.color?.trim() || "#f7906c";
+  const enabledLanguages = useMemo(
+    () =>
+      Array.isArray(place?.enabledLanguages) && place.enabledLanguages.length
+        ? place.enabledLanguages
+        : ALL_LOCALES,
+    [place?.enabledLanguages],
+  );
+  const primaryLanguage: LocaleCode = useMemo(() => {
+    const base = place?.language;
+    if (base === "uz" || base === "ru" || base === "en") return base;
+    return "uz";
+  }, [place?.language]);
+  const secondaryLanguages = useMemo(
+    () => enabledLanguages.filter((entry) => entry !== primaryLanguage),
+    [enabledLanguages, primaryLanguage],
+  );
   const address = place?.address?.trim() ?? "";
-  const city = place?.city?.trim() ?? "";
-  const country = place?.country?.trim() ?? "";
+  const city = pickLocalized(place?.cityI18n, place?.city ?? "").trim();
+  const country = pickLocalized(place?.countryI18n, place?.country ?? "").trim();
   const phone = place?.phone?.trim() ?? "";
   const wifiPassword = place?.wifiPassword?.trim() ?? "";
   const locationLine = [address, city, country].filter(Boolean).join(", ");
@@ -234,10 +273,21 @@ export default function PublicMenuPage() {
     { label: "TripAdvisor", icon: faCompass, value: place?.tripAdvisor ?? "" },
     { label: "Google Reviews", icon: faStar, value: place?.googleReviews ?? "" },
   ].filter((entry) => entry.value.trim().length > 0);
+  const languageLabel: Record<LocaleCode, string> = {
+    uz: "Uzbek (O'zbek)",
+    ru: "Russian (Русский)",
+    en: "English (English)",
+  };
+
+  useEffect(() => {
+    if (!ALL_LOCALES.includes(contentLanguage)) {
+      setContentLanguage("uz");
+    }
+  }, [contentLanguage]);
 
   function pickLocalized(text: MenuLocalizedText | undefined, fallback: string) {
     if (!text) return fallback;
-    return text[locale] || text.uz || text.ru || text.en || fallback;
+    return text[contentLanguage] || text.uz || text.ru || text.en || fallback;
   }
   useEffect(() => {
     async function loadMenu() {
@@ -263,6 +313,14 @@ export default function PublicMenuPage() {
         }
         const data = (await res.json()) as MenuResponse;
         setPlace(data.place);
+        const availableLanguages = ALL_LOCALES;
+        const preferredLanguage =
+          langFromQuery && availableLanguages.includes(langFromQuery)
+            ? langFromQuery
+            : availableLanguages.includes(data.place.language)
+              ? data.place.language
+              : availableLanguages[0] || "uz";
+        setContentLanguage(preferredLanguage);
         setCanEdit(Boolean(data.canEdit || data.isOwner));
         const firstMenu = data.place.menus?.[0] ?? null;
         const firstCategoryId = firstMenu?.categories?.[0]?._id ?? null;
@@ -277,7 +335,7 @@ export default function PublicMenuPage() {
       }
     }
     void loadMenu();
-  }, [firebaseUser, slug, t]);
+  }, [firebaseUser, langFromQuery, slug, t]);
 
   useEffect(() => {
     async function verifyEditAccess() {
@@ -299,8 +357,8 @@ export default function PublicMenuPage() {
 
   useEffect(() => {
     if (!slug || !queryMenuId || !resolvedActiveMenuId || queryMenuId === resolvedActiveMenuId) return;
-    router.replace(`/${locale}/p/${slug}?menu=${resolvedActiveMenuId}`);
-  }, [locale, queryMenuId, resolvedActiveMenuId, router, slug]);
+    router.replace(`/${locale}/p/${slug}?menu=${resolvedActiveMenuId}&lang=${contentLanguage}`);
+  }, [contentLanguage, locale, queryMenuId, resolvedActiveMenuId, router, slug]);
 
   async function authorizedFetch(input: string, init: RequestInit = {}) {
     if (!firebaseUser || !isAdminMode) throw new Error("Unauthorized");
@@ -325,10 +383,11 @@ export default function PublicMenuPage() {
     const targetMenu = activeMenu;
     if (!targetMenu) return;
     const previous = place;
+    const resolvedMenuName = pickLocalized(targetMenu.nameI18n, targetMenu.name);
     const optimistic: MenuCategory = {
       _id: `temp-category-${tempCategoryIdRef.current++}`,
       menuId: targetMenu.id,
-      menuName: targetMenu.name,
+      menuName: resolvedMenuName,
       name: payload.name,
       nameI18n: payload.nameI18n,
       description: payload.description,
@@ -341,7 +400,7 @@ export default function PublicMenuPage() {
     try {
       const res = await authorizedFetch("/api/categories", {
         method: "POST",
-        body: JSON.stringify({ slug: place.slug, menuId: targetMenu.id, menuName: targetMenu.name, ...payload }),
+        body: JSON.stringify({ slug: place.slug, menuId: targetMenu.id, menuName: resolvedMenuName, ...payload }),
       });
       const data = (await res.json()) as { category: MenuCategory };
       setPlace((current) =>
@@ -360,14 +419,21 @@ export default function PublicMenuPage() {
     }
   }
 
-  async function createMenu(name: string, insertSide: "left" | "right", isVisible: boolean) {
+  async function createMenu(
+    name: string,
+    nameI18n: MenuLocalizedText,
+    insertSide: "left" | "right",
+    isVisible: boolean,
+  ) {
     if (!place || !isAdminMode) return;
     try {
       const res = await authorizedFetch("/api/menus", {
         method: "POST",
-        body: JSON.stringify({ slug: place.slug, name, isVisible, insertSide }),
+        body: JSON.stringify({ slug: place.slug, name, nameI18n, isVisible, insertSide }),
       });
-      const data = (await res.json()) as { menu: { id: string; name: string; order: number; isVisible: boolean } };
+      const data = (await res.json()) as {
+        menu: { id: string; name: string; nameI18n?: MenuLocalizedText; order: number; isVisible: boolean };
+      };
       setPlace((current) =>
         current
           ? {
@@ -401,7 +467,7 @@ export default function PublicMenuPage() {
         body: JSON.stringify({
           slug: place.slug,
           menuId: activeCategory?.menuId ?? activeMenu?.id ?? "main",
-          menuName: activeCategory?.menuName ?? activeMenu?.name ?? "Menu",
+          menuName: activeCategory?.menuName ?? (activeMenu ? pickLocalized(activeMenu.nameI18n, activeMenu.name) : "Menu"),
           ...payload,
         }),
       });
@@ -432,27 +498,45 @@ export default function PublicMenuPage() {
 
   function openCreateCategoryModal() {
     setCategoryToEdit(null);
-    setCategoryForm({ name: "", nameI18n: { uz: "", ru: "", en: "" }, description: "", imageUrl: "", isVisible: true });
+    setCategoryForm({
+      name: "",
+      nameI18n: { uz: "", ru: "", en: "" },
+      description: "",
+      imageUrl: "",
+      isVisible: true,
+    });
     setCategoryEditorOpen(true);
   }
 
   function openCreateMenuModal(position: "left" | "right") {
-    setMenuForm({ name: "", isVisible: true, insertSide: position });
+    setMenuForm({
+      name: "",
+      nameI18n: { uz: "", ru: "", en: "" },
+      isVisible: true,
+      insertSide: position,
+    });
     setMenuEditorOpen(true);
   }
 
   function submitCreateMenuModal() {
-    const menuName = menuForm.name.trim();
+    const menuI18n = {
+      uz: menuForm.nameI18n.uz.trim(),
+      ru: menuForm.nameI18n.ru.trim(),
+      en: menuForm.nameI18n.en.trim(),
+    };
+    menuI18n[primaryLanguage] = menuForm.name.trim();
+    const menuName = menuI18n[primaryLanguage] || menuI18n.uz || menuI18n.ru || menuI18n.en;
     if (!menuName) return;
-    void createMenu(menuName, menuForm.insertSide, menuForm.isVisible);
+    void createMenu(menuName, menuI18n, menuForm.insertSide, menuForm.isVisible);
     setMenuEditorOpen(false);
   }
 
   function openEditCategoryModal(category: MenuCategory) {
+    const categoryNameI18n = category.nameI18n ?? { uz: category.name, ru: category.name, en: category.name };
     setCategoryToEdit(category);
     setCategoryForm({
-      name: category.name,
-      nameI18n: category.nameI18n ?? { uz: category.name, ru: category.name, en: category.name },
+      name: categoryNameI18n[primaryLanguage] || category.name,
+      nameI18n: categoryNameI18n,
       description: category.description ?? "",
       imageUrl: category.imageUrl ?? "",
       isVisible: category.isVisible ?? true,
@@ -472,7 +556,8 @@ export default function PublicMenuPage() {
       imageUrl: categoryForm.imageUrl.trim(),
       isVisible: categoryForm.isVisible,
     };
-    payload.name = payload.name || payload.nameI18n.uz || payload.nameI18n.ru || payload.nameI18n.en;
+    payload.nameI18n[primaryLanguage] = payload.name;
+    payload.name = payload.nameI18n[primaryLanguage] || payload.nameI18n.uz || payload.nameI18n.ru || payload.nameI18n.en;
     if (!payload.name) return;
     if (categoryToEdit) {
       await updateCategory(categoryToEdit._id, payload);
@@ -594,6 +679,14 @@ export default function PublicMenuPage() {
 
   function openEstablishmentEditor() {
     if (!place) return;
+    const countryI18n = place.countryI18n ?? { uz: place.country ?? "", ru: place.country ?? "", en: place.country ?? "" };
+    const cityI18n = place.cityI18n ?? { uz: place.city ?? "", ru: place.city ?? "", en: place.city ?? "" };
+    const additionalInfoI18n =
+      place.additionalInfoI18n ?? {
+        uz: place.additionalInfo ?? "",
+        ru: place.additionalInfo ?? "",
+        en: place.additionalInfo ?? "",
+      };
     setEstablishmentForm({
       name: place.name,
       colorTheme: place.colorTheme ?? "light",
@@ -606,8 +699,10 @@ export default function PublicMenuPage() {
       phone: place.phone ?? "",
       guestsCanOrder: Boolean(place.guestsCanOrder),
       hideMenuButtons: Boolean(place.hideMenuButtons),
-      country: place.country ?? "",
-      city: place.city ?? "",
+      country: countryI18n[primaryLanguage] || place.country || "",
+      countryI18n,
+      city: cityI18n[primaryLanguage] || place.city || "",
+      cityI18n,
       address: place.address ?? "",
       googleMapsLink: place.googleMapsLink ?? "",
       yandexMapsLink: place.yandexMapsLink ?? "",
@@ -617,7 +712,8 @@ export default function PublicMenuPage() {
       twitter: place.twitter ?? "",
       tripAdvisor: place.tripAdvisor ?? "",
       googleReviews: place.googleReviews ?? "",
-      additionalInfo: place.additionalInfo ?? "",
+      additionalInfo: additionalInfoI18n[primaryLanguage] || place.additionalInfo || "",
+      additionalInfoI18n,
     });
     setEstablishmentEditorOpen(true);
   }
@@ -625,11 +721,45 @@ export default function PublicMenuPage() {
   async function saveEstablishment() {
     if (!place || !isAdminMode) return;
     const previous = place;
-    setPlace({ ...place, ...establishmentForm });
+    const normalizedCountryI18n = {
+      uz: establishmentForm.countryI18n.uz.trim(),
+      ru: establishmentForm.countryI18n.ru.trim(),
+      en: establishmentForm.countryI18n.en.trim(),
+    };
+    const normalizedCityI18n = {
+      uz: establishmentForm.cityI18n.uz.trim(),
+      ru: establishmentForm.cityI18n.ru.trim(),
+      en: establishmentForm.cityI18n.en.trim(),
+    };
+    const normalizedAdditionalInfoI18n = {
+      uz: establishmentForm.additionalInfoI18n.uz.trim(),
+      ru: establishmentForm.additionalInfoI18n.ru.trim(),
+      en: establishmentForm.additionalInfoI18n.en.trim(),
+    };
+    normalizedCountryI18n[primaryLanguage] = establishmentForm.country.trim();
+    normalizedCityI18n[primaryLanguage] = establishmentForm.city.trim();
+    normalizedAdditionalInfoI18n[primaryLanguage] = establishmentForm.additionalInfo.trim();
+    const normalizedForm = {
+      ...establishmentForm,
+      countryI18n: normalizedCountryI18n,
+      cityI18n: normalizedCityI18n,
+      additionalInfoI18n: normalizedAdditionalInfoI18n,
+      country:
+        (normalizedCountryI18n[primaryLanguage] || establishmentForm.country || normalizedCountryI18n.uz || normalizedCountryI18n.ru || normalizedCountryI18n.en).trim(),
+      city:
+        (normalizedCityI18n[primaryLanguage] || establishmentForm.city || normalizedCityI18n.uz || normalizedCityI18n.ru || normalizedCityI18n.en).trim(),
+      additionalInfo:
+        (normalizedAdditionalInfoI18n[primaryLanguage] ||
+          establishmentForm.additionalInfo ||
+          normalizedAdditionalInfoI18n.uz ||
+          normalizedAdditionalInfoI18n.ru ||
+          normalizedAdditionalInfoI18n.en).trim(),
+    };
+    setPlace({ ...place, ...normalizedForm });
     try {
       const res = await authorizedFetch(`/api/places/${place.slug}`, {
         method: "PATCH",
-        body: JSON.stringify(establishmentForm),
+        body: JSON.stringify(normalizedForm),
       });
       const data = (await res.json()) as { place: Partial<MenuPlace> };
       setPlace((current) => (current ? { ...current, ...data.place } : current));
@@ -699,7 +829,7 @@ export default function PublicMenuPage() {
   function handleCategorySelect(categoryId: string) {
     setActiveCategoryId(categoryId);
     setSearchQuery("");
-    router.push(`/${locale}/p/${slug}/${categoryId}`);
+    router.push(`/${locale}/p/${slug}/${categoryId}?lang=${contentLanguage}`);
   }
 
   function handleMenuSelect(menuId: string) {
@@ -707,7 +837,7 @@ export default function PublicMenuPage() {
     const nextCategoryId = orderedMenus.find((menu) => menu.id === menuId)?.categories[0]?._id ?? null;
     setActiveCategoryId(nextCategoryId);
     setSearchQuery("");
-    router.replace(`/${locale}/p/${slug}?menu=${menuId}`);
+    router.replace(`/${locale}/p/${slug}?menu=${menuId}&lang=${contentLanguage}`);
   }
 
   function moveMenu(menuId: string, direction: "left" | "right") {
@@ -735,7 +865,9 @@ export default function PublicMenuPage() {
     const menu = orderedMenus.find((entry) => entry.id === menuId);
     if (!menu) return;
     setMenuRenameId(menuId);
-    setMenuRenameName(menu.name);
+    const menuNameI18n = menu.nameI18n ?? { uz: menu.name, ru: menu.name, en: menu.name };
+    setMenuRenameName(menuNameI18n[primaryLanguage] || menu.name);
+    setMenuRenameNameI18n(menuNameI18n);
     setMenuRenameOpen(true);
   }
 
@@ -743,18 +875,24 @@ export default function PublicMenuPage() {
     if (!place || !isAdminMode || !menuRenameId) return;
     const menu = orderedMenus.find((entry) => entry.id === menuRenameId);
     if (!menu) return;
-    const nextName = menuRenameName.trim();
-    if (!nextName || nextName === menu.name) return;
+    const nameI18n = {
+      uz: menuRenameNameI18n.uz.trim(),
+      ru: menuRenameNameI18n.ru.trim(),
+      en: menuRenameNameI18n.en.trim(),
+    };
+    nameI18n[primaryLanguage] = menuRenameName.trim();
+    const nextName = nameI18n[primaryLanguage] || nameI18n.uz || nameI18n.ru || nameI18n.en;
+    if (!nextName) return;
     try {
       await authorizedFetch(`/api/menus/${menuRenameId}`, {
         method: "PATCH",
-        body: JSON.stringify({ slug: place.slug, name: nextName, isVisible: true }),
+        body: JSON.stringify({ slug: place.slug, name: nextName, nameI18n, isVisible: true }),
       });
       setPlace((current) =>
         current
           ? {
               ...current,
-              menus: (current.menus ?? []).map((entry) => (entry.id === menuRenameId ? { ...entry, name: nextName } : entry)),
+              menus: (current.menus ?? []).map((entry) => (entry.id === menuRenameId ? { ...entry, name: nextName, nameI18n } : entry)),
               categories: current.categories.map((category) =>
                 category.menuId === menuRenameId ? { ...category, menuName: nextName } : category,
               ),
@@ -764,6 +902,7 @@ export default function PublicMenuPage() {
       setMenuRenameOpen(false);
       setMenuRenameId(null);
       setMenuRenameName("");
+      setMenuRenameNameI18n({ uz: "", ru: "", en: "" });
     } catch {
       setError("Failed to rename menu");
     }
@@ -773,7 +912,7 @@ export default function PublicMenuPage() {
     if (!place || !isAdminMode) return;
     const menu = orderedMenus.find((entry) => entry.id === menuId);
     if (!menu) return;
-    setMenuDeleteTarget({ id: menu.id, name: menu.name });
+    setMenuDeleteTarget({ id: menu.id, name: pickLocalized(menu.nameI18n, menu.name) });
   }
 
   async function confirmDeleteMenu() {
@@ -855,6 +994,24 @@ export default function PublicMenuPage() {
                 </div>
               </div>
             ) : null}
+            <div className="absolute bottom-3 right-3 z-30">
+              <select
+                value={contentLanguage}
+                onChange={(event) => {
+                  const nextLang = event.target.value as LocaleCode;
+                  setContentLanguage(nextLang);
+                  const nextMenu = resolvedActiveMenuId ? `menu=${resolvedActiveMenuId}&` : "";
+                  router.replace(`/${locale}/p/${slug}?${nextMenu}lang=${nextLang}`);
+                }}
+                className="rounded-lg bg-white/95 px-2 py-1 text-xs font-semibold text-neutral-900 shadow outline-none"
+              >
+                {ALL_LOCALES.map((langCode) => (
+                  <option key={langCode} value={langCode}>
+                    {languageLabel[langCode]}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div
@@ -937,15 +1094,15 @@ export default function PublicMenuPage() {
                 ))}
               </div>
             ) : null}
-            {place?.additionalInfo?.trim() ? (
+            {pickLocalized(place?.additionalInfoI18n, place?.additionalInfo ?? "").trim() ? (
               <p className={`mt-2 text-sm ${isLightTheme ? "text-neutral-700" : "text-neutral-300"}`}>
-                {place.additionalInfo}
+                {pickLocalized(place?.additionalInfoI18n, place?.additionalInfo ?? "")}
               </p>
             ) : null}
 
             <div className="mt-2">
               <MenuTabs
-                menus={orderedMenus.map((menu) => ({ id: menu.id, name: menu.name }))}
+                menus={orderedMenus.map((menu) => ({ id: menu.id, name: pickLocalized(menu.nameI18n, menu.name) }))}
                 activeMenuId={resolvedActiveMenuId}
                 accentColor={accentColor}
                 isLight={isLightTheme}
@@ -1039,6 +1196,22 @@ export default function PublicMenuPage() {
                   className="w-full rounded-xl bg-neutral-100 px-3 py-2.5 text-sm text-neutral-800 outline-none dark:bg-neutral-800 dark:text-neutral-100"
                 />
               </label>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {secondaryLanguages.map((langCode) => (
+                  <input
+                    key={`menu-name-${langCode}`}
+                    value={menuForm.nameI18n[langCode]}
+                    onChange={(event) =>
+                      setMenuForm((current) => ({
+                        ...current,
+                        nameI18n: { ...current.nameI18n, [langCode]: event.target.value },
+                      }))
+                    }
+                    placeholder={`Menu name (${langCode.toUpperCase()})`}
+                    className="w-full rounded-xl bg-neutral-100 px-3 py-2.5 text-sm text-neutral-800 outline-none dark:bg-neutral-800 dark:text-neutral-100"
+                  />
+                ))}
+              </div>
               <label className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300">
                 <input
                   type="checkbox"
@@ -1080,6 +1253,19 @@ export default function PublicMenuPage() {
                 className="w-full rounded-xl bg-neutral-100 px-3 py-2.5 text-sm text-neutral-800 outline-none dark:bg-neutral-800 dark:text-neutral-100"
               />
             </label>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              {secondaryLanguages.map((langCode) => (
+                <input
+                  key={`menu-rename-${langCode}`}
+                  value={menuRenameNameI18n[langCode]}
+                  onChange={(event) =>
+                    setMenuRenameNameI18n((current) => ({ ...current, [langCode]: event.target.value }))
+                  }
+                  placeholder={`Menu name (${langCode.toUpperCase()})`}
+                  className="w-full rounded-xl bg-neutral-100 px-3 py-2.5 text-sm text-neutral-800 outline-none dark:bg-neutral-800 dark:text-neutral-100"
+                />
+              ))}
+            </div>
             <div className="mt-6 flex justify-end gap-3">
               <button
                 type="button"
@@ -1146,30 +1332,20 @@ export default function PublicMenuPage() {
                 />
               </label>
               <div className="grid gap-3 sm:grid-cols-3">
-                <input
-                  value={categoryForm.nameI18n.uz}
-                  onChange={(event) =>
-                    setCategoryForm((current) => ({ ...current, nameI18n: { ...current.nameI18n, uz: event.target.value } }))
-                  }
-                  placeholder="Name (UZ)"
-                  className="w-full rounded-xl bg-neutral-100 px-3 py-2.5 text-sm text-neutral-800 outline-none dark:bg-neutral-800 dark:text-neutral-100"
-                />
-                <input
-                  value={categoryForm.nameI18n.ru}
-                  onChange={(event) =>
-                    setCategoryForm((current) => ({ ...current, nameI18n: { ...current.nameI18n, ru: event.target.value } }))
-                  }
-                  placeholder="Name (RU)"
-                  className="w-full rounded-xl bg-neutral-100 px-3 py-2.5 text-sm text-neutral-800 outline-none dark:bg-neutral-800 dark:text-neutral-100"
-                />
-                <input
-                  value={categoryForm.nameI18n.en}
-                  onChange={(event) =>
-                    setCategoryForm((current) => ({ ...current, nameI18n: { ...current.nameI18n, en: event.target.value } }))
-                  }
-                  placeholder="Name (EN)"
-                  className="w-full rounded-xl bg-neutral-100 px-3 py-2.5 text-sm text-neutral-800 outline-none dark:bg-neutral-800 dark:text-neutral-100"
-                />
+                {secondaryLanguages.map((langCode) => (
+                  <input
+                    key={`category-name-${langCode}`}
+                    value={categoryForm.nameI18n[langCode]}
+                    onChange={(event) =>
+                      setCategoryForm((current) => ({
+                        ...current,
+                        nameI18n: { ...current.nameI18n, [langCode]: event.target.value },
+                      }))
+                    }
+                    placeholder={`Name (${langCode.toUpperCase()})`}
+                    className="w-full rounded-xl bg-neutral-100 px-3 py-2.5 text-sm text-neutral-800 outline-none dark:bg-neutral-800 dark:text-neutral-100"
+                  />
+                ))}
               </div>
               <label className="block">
                 <span className="mb-1 block text-sm text-neutral-500 dark:text-neutral-400">Description</span>
@@ -1499,6 +1675,22 @@ export default function PublicMenuPage() {
                   onChange={(e) => setEstablishmentForm((c) => ({ ...c, country: e.target.value }))}
                   className="w-full rounded-xl bg-neutral-100 px-3 py-2.5 text-sm text-neutral-800 outline-none dark:bg-neutral-800 dark:text-neutral-100"
                 />
+                <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                  {secondaryLanguages.map((langCode) => (
+                    <input
+                      key={`country-${langCode}`}
+                      value={establishmentForm.countryI18n[langCode]}
+                      onChange={(event) =>
+                        setEstablishmentForm((current) => ({
+                          ...current,
+                          countryI18n: { ...current.countryI18n, [langCode]: event.target.value },
+                        }))
+                      }
+                      placeholder={`Country (${langCode.toUpperCase()})`}
+                      className="w-full rounded-xl bg-neutral-100 px-3 py-2 text-sm text-neutral-800 outline-none dark:bg-neutral-800 dark:text-neutral-100"
+                    />
+                  ))}
+                </div>
               </label>
               <label>
                 <span className="mb-1 block text-sm text-neutral-500 dark:text-neutral-400">City</span>
@@ -1507,6 +1699,22 @@ export default function PublicMenuPage() {
                   onChange={(e) => setEstablishmentForm((c) => ({ ...c, city: e.target.value }))}
                   className="w-full rounded-xl bg-neutral-100 px-3 py-2.5 text-sm text-neutral-800 outline-none dark:bg-neutral-800 dark:text-neutral-100"
                 />
+                <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                  {secondaryLanguages.map((langCode) => (
+                    <input
+                      key={`city-${langCode}`}
+                      value={establishmentForm.cityI18n[langCode]}
+                      onChange={(event) =>
+                        setEstablishmentForm((current) => ({
+                          ...current,
+                          cityI18n: { ...current.cityI18n, [langCode]: event.target.value },
+                        }))
+                      }
+                      placeholder={`City (${langCode.toUpperCase()})`}
+                      className="w-full rounded-xl bg-neutral-100 px-3 py-2 text-sm text-neutral-800 outline-none dark:bg-neutral-800 dark:text-neutral-100"
+                    />
+                  ))}
+                </div>
               </label>
               <label className="sm:col-span-2">
                 <span className="mb-1 block text-sm text-neutral-500 dark:text-neutral-400">Address</span>
@@ -1587,6 +1795,22 @@ export default function PublicMenuPage() {
                   onChange={(e) => setEstablishmentForm((c) => ({ ...c, additionalInfo: e.target.value }))}
                   className="h-24 w-full resize-none rounded-xl bg-neutral-100 px-3 py-2.5 text-sm text-neutral-800 outline-none dark:bg-neutral-800 dark:text-neutral-100"
                 />
+                <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                  {secondaryLanguages.map((langCode) => (
+                    <textarea
+                      key={`additional-info-${langCode}`}
+                      value={establishmentForm.additionalInfoI18n[langCode]}
+                      onChange={(event) =>
+                        setEstablishmentForm((current) => ({
+                          ...current,
+                          additionalInfoI18n: { ...current.additionalInfoI18n, [langCode]: event.target.value },
+                        }))
+                      }
+                      placeholder={`Additional info (${langCode.toUpperCase()})`}
+                      className="h-20 w-full resize-none rounded-xl bg-neutral-100 px-3 py-2 text-sm text-neutral-800 outline-none dark:bg-neutral-800 dark:text-neutral-100"
+                    />
+                  ))}
+                </div>
               </label>
             </div>
             {imageUploadError ? <p className="mt-3 text-sm text-red-500">{imageUploadError}</p> : null}
@@ -1612,6 +1836,8 @@ export default function PublicMenuPage() {
           open={itemModalOpen}
           onClose={() => setItemModalOpen(false)}
           item={editingItem}
+          enabledLanguages={enabledLanguages}
+          primaryLanguage={primaryLanguage}
           onSave={saveItem}
           labels={{
             addTitle: t("items.addModalTitle"),

@@ -516,7 +516,18 @@
         },
         "locales": {
           "primary": "Primary",
-          "makePrimary": "Make primary"
+          "makePrimary": "Set as main",
+          "mainLanguage": "Main language",
+          "addAnother": "Add another language",
+          "addLanguage": "Add language +",
+          "noMoreLanguages": "No more languages",
+          "unsaved": "You have unsaved changes",
+          "saved": "Languages updated",
+          "saveError": "Failed to update languages",
+          "remove": "Remove",
+          "cancel": "Cancel",
+          "removeTitle": "Remove language: {language}",
+          "removeDescription": "By deleting this language, you'll permanently delete all menu text unique to that language."
         },
         "scheduled": {
           "targetName": "Target name",

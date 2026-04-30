@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { normalizeSlug, verifyUserId, findUserEstablishment } from "@/app/api/_utils/menu-builder";
 import { MenuEntityModel } from "@/models/MenuEntity";
 
+function normalizeMenuNameI18nByLocales(
+  input: { uz?: string; ru?: string; en?: string } | undefined,
+  fallback: string,
+) {
+  return {
+    uz: typeof input?.uz === "string" ? input.uz.trim() : fallback,
+    ru: typeof input?.ru === "string" ? input.ru.trim() : fallback,
+    en: typeof input?.en === "string" ? input.en.trim() : fallback,
+  };
+}
+
 export async function PATCH(request: NextRequest) {
   try {
     const userId = await verifyUserId(request);
@@ -23,9 +34,10 @@ export async function PATCH(request: NextRequest) {
     establishment.menus.forEach((menu: { order: number }, index: number) => {
       menu.order = index;
     });
+    establishment.markModified("menus");
     await establishment.save();
     await Promise.all(
-      establishment.menus.map((menu: { id: string; name: string; order: number; isVisible?: boolean }) =>
+      establishment.menus.map((menu: { id: string; name: string; nameI18n?: { uz?: string; ru?: string; en?: string }; order: number; isVisible?: boolean }) =>
         MenuEntityModel.updateOne(
           { establishmentId: establishment._id, id: menu.id },
           {
@@ -33,6 +45,7 @@ export async function PATCH(request: NextRequest) {
               establishmentId: establishment._id,
               id: menu.id,
               name: menu.name,
+              nameI18n: normalizeMenuNameI18nByLocales(menu.nameI18n, menu.name),
               order: menu.order,
               isVisible: typeof menu.isVisible === "boolean" ? menu.isVisible : true,
             },
