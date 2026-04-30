@@ -68,12 +68,13 @@ export function AddItemModal({
   useEffect(() => {
     if (!open) return;
     const frame = window.requestAnimationFrame(() => {
-      setName(item?.name ?? "");
-      setNameI18n(item?.nameI18n ?? { uz: item?.name ?? "", ru: item?.name ?? "", en: item?.name ?? "" });
-      setDescription(item?.description ?? "");
-      setDescriptionI18n(
-        item?.descriptionI18n ?? { uz: item?.description ?? "", ru: item?.description ?? "", en: item?.description ?? "" },
-      );
+      const itemNameI18n = item?.nameI18n ?? { uz: item?.name ?? "", ru: item?.name ?? "", en: item?.name ?? "" };
+      const itemDescriptionI18n =
+        item?.descriptionI18n ?? { uz: item?.description ?? "", ru: item?.description ?? "", en: item?.description ?? "" };
+      setName(itemNameI18n[primaryLanguage] || item?.name || "");
+      setNameI18n(itemNameI18n);
+      setDescription(itemDescriptionI18n[primaryLanguage] || item?.description || "");
+      setDescriptionI18n(itemDescriptionI18n);
       setPrice(item ? String(item.price) : "");
       setBadge(item?.badge ?? null);
       setImageUrl(item?.imageUrl ?? "");
@@ -82,7 +83,7 @@ export function AddItemModal({
       setLoading(false);
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [open, item]);
+  }, [open, item, primaryLanguage]);
 
   const preview = useMemo(() => imageUrl.trim(), [imageUrl]);
   const secondaryLanguages = useMemo(
@@ -118,10 +119,15 @@ export function AddItemModal({
       ru: descriptionI18n.ru.trim(),
       en: descriptionI18n.en.trim(),
     };
+    normalizedNameI18n[primaryLanguage] = trimmedName;
+    normalizedDescriptionI18n[primaryLanguage] = trimmedDescription;
     const resolvedName =
-      trimmedName || normalizedNameI18n.uz || normalizedNameI18n.ru || normalizedNameI18n.en;
+      normalizedNameI18n[primaryLanguage] || normalizedNameI18n.uz || normalizedNameI18n.ru || normalizedNameI18n.en;
     const resolvedDescription =
-      trimmedDescription || normalizedDescriptionI18n.uz || normalizedDescriptionI18n.ru || normalizedDescriptionI18n.en;
+      normalizedDescriptionI18n[primaryLanguage] ||
+      normalizedDescriptionI18n.uz ||
+      normalizedDescriptionI18n.ru ||
+      normalizedDescriptionI18n.en;
     const parsedPrice = Number(price);
     if (!resolvedName) {
       setError(labels.requiredName);
