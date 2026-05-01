@@ -544,6 +544,11 @@
       "confirmDeleteItem": "Ushbu taomni o'chirasizmi?"
     }
   },
+  "AppError": {
+    "title": "Xatolik yuz berdi.",
+    "description": "Qayta urinib ko‘ring. Muammo davom etsa, sahifani yangilang.",
+    "retry": "Qayta urinish"
+  },
   "FinalCta": {
     "title": "O'zi sotadigan menyuga tayyormisiz?",
     "subtitle": "Yuzlab joylar bu hafta tezroq menyu chiqaryapti. Taomlaringizni ko'chiramiz — yoki bir soat ichida noldan boshlaysiz.",

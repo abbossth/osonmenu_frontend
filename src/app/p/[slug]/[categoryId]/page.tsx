@@ -6,6 +6,6 @@ type Props = {
 
 export default async function PublicCategoryRedirectPage({ params }: Props) {
   const { slug, categoryId } = await params;
-  redirect(`/uz/p/${slug}/${categoryId}`);
+  redirect(`/uz/p/${slug}?category=${encodeURIComponent(categoryId)}`);
 }
 

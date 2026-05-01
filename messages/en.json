@@ -544,6 +544,11 @@
       "confirmDeleteItem": "Delete this item?"
     }
   },
+  "AppError": {
+    "title": "Something went wrong.",
+    "description": "Please try again. If the problem continues, refresh the page.",
+    "retry": "Try again"
+  },
   "FinalCta": {
     "title": "Ready to serve a menu that sells itself?",
     "subtitle": "Join hundreds of venues shipping faster menus this week. We'll migrate your items—or you can start from scratch in under an hour.",

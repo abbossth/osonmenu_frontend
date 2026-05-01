@@ -5,11 +5,12 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFacebookF, faInstagram, faTiktok, faXTwitter } from "@fortawesome/free-brands-svg-icons";
-import { faCompass, faLocationDot, faMagnifyingGlass, faMapLocationDot, faPenToSquare, faPhone, faStar, faWifi, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft, faCompass, faLocationDot, faMagnifyingGlass, faMapLocationDot, faPenToSquare, faPhone, faStar, faWifi, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { AddItemModal } from "@/components/MenuBuilder/AddItemModal";
 import { CategoryList } from "@/components/MenuUI/CategoryList";
 import { BottomNav } from "@/components/MenuUI/BottomNav";
 import { ImageEditorModal } from "@/components/MenuUI/ImageEditorModal";
+import { ItemList } from "@/components/MenuUI/ItemList";
 import { MenuTabs } from "@/components/MenuUI/MenuTabs";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getDefaultCategoryImage } from "@/lib/category-default-image";
@@ -111,6 +112,7 @@ export default function PublicMenuPage() {
   const slug = typeof params.slug === "string" ? params.slug : "";
   const locale = params.locale === "ru" || params.locale === "en" ? params.locale : "uz";
   const menuFromQuery = searchParams.get("menu");
+  const categoryFromQuery = searchParams.get("category");
   const langFromQueryRaw = searchParams.get("lang");
   const langFromQuery: LocaleCode | null =
     langFromQueryRaw === "uz" || langFromQueryRaw === "ru" || langFromQueryRaw === "en"
@@ -124,7 +126,7 @@ export default function PublicMenuPage() {
   const [canEdit, setCanEdit] = useState(false);
 
   const [itemModalOpen, setItemModalOpen] = useState(false);
-  const [editingItem] = useState<MenuItem | null>(null);
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [menuOrder, setMenuOrder] = useState<string[]>([]);
   const [menuEditorOpen, setMenuEditorOpen] = useState(false);
@@ -190,6 +192,8 @@ export default function PublicMenuPage() {
   const [contentLanguage, setContentLanguage] = useState<LocaleCode>("uz");
   const tempCategoryIdRef = useRef(0);
   const tempItemIdRef = useRef(0);
+  const langFromQueryRef = useRef<LocaleCode | null>(langFromQuery);
+  langFromQueryRef.current = langFromQuery;
   const logoInputRef = useRef<HTMLInputElement | null>(null);
   const backgroundInputRef = useRef<HTMLInputElement | null>(null);
   const categoryImageInputRef = useRef<HTMLInputElement | null>(null);
@@ -232,10 +236,24 @@ export default function PublicMenuPage() {
     });
   }, [activeMenuCategories, searchQuery, contentLanguage]);
   const resolvedActiveCategoryId =
-    activeCategoryId && activeMenuCategories.some((category) => category._id === activeCategoryId)
-      ? activeCategoryId
-      : activeMenuCategories[0]?._id ?? null;
+    categoryFromQuery && activeMenuCategories.some((category) => category._id === categoryFromQuery)
+      ? categoryFromQuery
+      : activeCategoryId && activeMenuCategories.some((category) => category._id === activeCategoryId)
+        ? activeCategoryId
+        : activeMenuCategories[0]?._id ?? null;
   const activeCategory = activeMenuCategories.find((category) => category._id === resolvedActiveCategoryId) ?? null;
+  const showItemsPanel = Boolean(categoryFromQuery && activeCategory && activeCategory._id === categoryFromQuery);
+  const filteredMenuItems = useMemo(() => {
+    if (!showItemsPanel || !activeCategory) return [];
+    const query = searchQuery.trim().toLowerCase();
+    const all = [...activeCategory.items].sort((a, b) => a.order - b.order);
+    if (!query) return all;
+    return all.filter(
+      (item) =>
+        pickLocalized(item.nameI18n, item.name).toLowerCase().includes(query) ||
+        pickLocalized(item.descriptionI18n, item.description).toLowerCase().includes(query),
+    );
+  }, [activeCategory, showItemsPanel, searchQuery, contentLanguage]);
   const isAdminMode = canEdit;
   const isLightTheme = (place?.colorTheme ?? "light") === "light";
   const accentColor = place?.color?.trim() || "#f7906c";
@@ -314,19 +332,38 @@ export default function PublicMenuPage() {
         const data = (await res.json()) as MenuResponse;
         setPlace(data.place);
         const availableLanguages = ALL_LOCALES;
+        const qLang = langFromQueryRef.current;
         const preferredLanguage =
-          langFromQuery && availableLanguages.includes(langFromQuery)
-            ? langFromQuery
+          qLang && availableLanguages.includes(qLang)
+            ? qLang
             : availableLanguages.includes(data.place.language)
               ? data.place.language
               : availableLanguages[0] || "uz";
         setContentLanguage(preferredLanguage);
         setCanEdit(Boolean(data.canEdit || data.isOwner));
-        const firstMenu = data.place.menus?.[0] ?? null;
-        const firstCategoryId = firstMenu?.categories?.[0]?._id ?? null;
+        const sortedCategories = sortCategories(data.place.categories);
+        const menusBuilt = buildMenus(sortedCategories, data.place.menus ?? []);
+        const urlCategoryEntity =
+          categoryFromQuery && sortedCategories.some((c) => c._id === categoryFromQuery)
+            ? sortedCategories.find((c) => c._id === categoryFromQuery)!
+            : null;
+        let initialMenuId: string | null = null;
+        if (urlCategoryEntity) {
+          initialMenuId = urlCategoryEntity.menuId || "main";
+        } else if (menuFromQuery && menusBuilt.some((m) => m.id === menuFromQuery)) {
+          initialMenuId = menuFromQuery;
+        } else {
+          initialMenuId = menusBuilt[0]?.id ?? null;
+        }
+        const menuBlock = menusBuilt.find((m) => m.id === initialMenuId) ?? menusBuilt[0] ?? null;
+        const categoriesInMenu = menuBlock?.categories ?? [];
+        const initialCategoryId =
+          urlCategoryEntity && categoriesInMenu.some((c) => c._id === urlCategoryEntity._id)
+            ? urlCategoryEntity._id
+            : categoriesInMenu.sort((a, b) => a.order - b.order)[0]?._id ?? null;
         setMenuOrder((data.place.menus ?? []).map((menu) => menu.id));
-        setActiveMenuId(firstMenu?.id ?? null);
-        setActiveCategoryId(firstCategoryId);
+        setActiveMenuId(initialMenuId);
+        setActiveCategoryId(initialCategoryId);
       } catch (loadError) {
         const message = loadError instanceof Error ? loadError.message : "";
         setError(message || t("errors.fetchMenu"));
@@ -335,7 +372,37 @@ export default function PublicMenuPage() {
       }
     }
     void loadMenu();
-  }, [firebaseUser, langFromQuery, slug, t]);
+  }, [firebaseUser, slug, t]);
+
+  /** Menu content language from `?lang=` — no refetch; keeps state in sync on back/forward or shared links. */
+  useEffect(() => {
+    if (!langFromQuery || !ALL_LOCALES.includes(langFromQuery)) return;
+    setContentLanguage(langFromQuery);
+  }, [langFromQuery]);
+
+  /** Keep selection in sync with URL when `menu` / `category` change without refetching (e.g. browser back/forward). */
+  useEffect(() => {
+    if (!place) return;
+
+    const sorted = sortCategories(place.categories);
+    const menusBuilt = buildMenus(sorted, place.menus ?? []);
+
+    if (categoryFromQuery) {
+      const cat = sorted.find((c) => c._id === categoryFromQuery);
+      if (cat) {
+        setActiveMenuId(cat.menuId || "main");
+        setActiveCategoryId(categoryFromQuery);
+      }
+      return;
+    }
+
+    if (menuFromQuery && menusBuilt.some((m) => m.id === menuFromQuery)) {
+      setActiveMenuId(menuFromQuery);
+      const cats = menusBuilt.find((m) => m.id === menuFromQuery)?.categories ?? [];
+      const firstId = [...cats].sort((a, b) => a.order - b.order)[0]?._id ?? null;
+      setActiveCategoryId(firstId);
+    }
+  }, [place, categoryFromQuery, menuFromQuery]);
 
   useEffect(() => {
     async function verifyEditAccess() {
@@ -357,7 +424,7 @@ export default function PublicMenuPage() {
 
   useEffect(() => {
     if (!slug || !queryMenuId || !resolvedActiveMenuId || queryMenuId === resolvedActiveMenuId) return;
-    router.replace(`/${locale}/p/${slug}?menu=${resolvedActiveMenuId}&lang=${contentLanguage}`);
+    router.replace(`/${locale}/p/${slug}?menu=${resolvedActiveMenuId}&lang=${contentLanguage}`, { scroll: false });
   }, [contentLanguage, locale, queryMenuId, resolvedActiveMenuId, router, slug]);
 
   async function authorizedFetch(input: string, init: RequestInit = {}) {
@@ -486,6 +553,9 @@ export default function PublicMenuPage() {
     });
     try {
       await authorizedFetch(`/api/categories/${categoryId}?slug=${place.slug}`, { method: "DELETE" });
+      if (categoryFromQuery === categoryId) {
+        router.replace(publicMenuHref({ menu: resolvedActiveMenuId, lang: contentLanguage }), { scroll: false });
+      }
       if (activeCategoryId === categoryId) {
         const nextCategoryId = previous.categories.find((category) => category._id !== categoryId)?._id ?? null;
         setActiveCategoryId(nextCategoryId);
@@ -677,6 +747,62 @@ export default function PublicMenuPage() {
     }
   }
 
+  async function reorderItems(itemIds: string[]) {
+    if (!place || !activeCategory || !isAdminMode) return;
+    const previous = place;
+    const rank = new Map(itemIds.map((id, index) => [id, index]));
+    setPlace({
+      ...place,
+      categories: place.categories.map((category) =>
+        category._id === activeCategory._id
+          ? {
+              ...category,
+              items: category.items.map((item) => ({ ...item, order: rank.get(item._id) ?? item.order })).sort((a, b) => a.order - b.order),
+            }
+          : category,
+      ),
+    });
+    try {
+      await authorizedFetch("/api/items/reorder", {
+        method: "PATCH",
+        body: JSON.stringify({ slug: place.slug, categoryId: activeCategory._id, itemIds }),
+      });
+    } catch (itemError) {
+      setPlace(previous);
+      setError(itemError instanceof Error ? itemError.message : t("errors.itemReorder"));
+    }
+  }
+
+  async function moveItem(itemId: string, direction: "up" | "down") {
+    if (!activeCategory || !isAdminMode) return;
+    const ids = activeCategory.items.map((item) => item._id);
+    const currentIndex = ids.indexOf(itemId);
+    if (currentIndex === -1) return;
+    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= ids.length) return;
+    const next = [...ids];
+    const [moved] = next.splice(currentIndex, 1);
+    next.splice(targetIndex, 0, moved);
+    await reorderItems(next);
+  }
+
+  async function deleteItem(itemId: string) {
+    if (!place || !activeCategory || !isAdminMode) return;
+    const previous = place;
+    setPlace({
+      ...place,
+      categories: place.categories.map((category) =>
+        category._id === activeCategory._id ? { ...category, items: category.items.filter((item) => item._id !== itemId) } : category,
+      ),
+    });
+    try {
+      await authorizedFetch(`/api/items/${itemId}?slug=${place.slug}`, { method: "DELETE" });
+    } catch (itemError) {
+      setPlace(previous);
+      setError(itemError instanceof Error ? itemError.message : t("errors.itemDelete"));
+    }
+  }
+
   function openEstablishmentEditor() {
     if (!place) return;
     const countryI18n = place.countryI18n ?? { uz: place.country ?? "", ru: place.country ?? "", en: place.country ?? "" };
@@ -826,10 +952,26 @@ export default function PublicMenuPage() {
     await handleCategoryImageUpload(editedFile);
   }
 
+  function publicMenuHref(parts: { menu?: string | null; category?: string | null; lang?: LocaleCode }) {
+    const q = new URLSearchParams();
+    if (parts.menu) q.set("menu", parts.menu);
+    if (parts.category) q.set("category", parts.category);
+    q.set("lang", parts.lang ?? contentLanguage);
+    return `/${locale}/p/${slug}?${q.toString()}`;
+  }
+
   function handleCategorySelect(categoryId: string) {
     setActiveCategoryId(categoryId);
     setSearchQuery("");
-    router.push(`/${locale}/p/${slug}/${categoryId}?lang=${contentLanguage}`);
+    router.replace(
+      publicMenuHref({ menu: resolvedActiveMenuId, category: categoryId, lang: contentLanguage }),
+      { scroll: false },
+    );
+  }
+
+  function handleBackToCategories() {
+    setSearchQuery("");
+    router.replace(publicMenuHref({ menu: resolvedActiveMenuId, lang: contentLanguage }), { scroll: false });
   }
 
   function handleMenuSelect(menuId: string) {
@@ -837,7 +979,7 @@ export default function PublicMenuPage() {
     const nextCategoryId = orderedMenus.find((menu) => menu.id === menuId)?.categories[0]?._id ?? null;
     setActiveCategoryId(nextCategoryId);
     setSearchQuery("");
-    router.replace(`/${locale}/p/${slug}?menu=${menuId}&lang=${contentLanguage}`);
+    router.replace(publicMenuHref({ menu: menuId, lang: contentLanguage }), { scroll: false });
   }
 
   function moveMenu(menuId: string, direction: "left" | "right") {
@@ -959,7 +1101,34 @@ export default function PublicMenuPage() {
           <div className="mt-4 h-28 animate-pulse rounded-2xl bg-neutral-800" />
         </div>
       ) : (
-        <div className={`mx-auto mt-2 max-w-[620px] overflow-hidden rounded-[30px] shadow-sm ${isLightTheme ? "border border-neutral-200 bg-white" : "border border-white/10 bg-[#121212]"}`}>
+        <>
+          {(showItemsPanel || (isAdminMode && !showItemsPanel)) && (
+            <div className="pointer-events-none fixed left-0 right-0 top-[max(1.25rem,calc(env(safe-area-inset-top,0px)+1rem))] z-30 flex justify-center pl-9 pr-5 sm:pl-12 sm:pr-6">
+              <div className="pointer-events-auto flex w-full max-w-[620px] justify-start gap-2">
+                {showItemsPanel ? (
+                  <button
+                    type="button"
+                    onClick={handleBackToCategories}
+                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-2xl text-neutral-900 shadow-md ring-1 ring-black/5"
+                    aria-label="Back to categories"
+                  >
+                    <FontAwesomeIcon icon={faArrowLeft} className="text-base" />
+                  </button>
+                ) : null}
+                {isAdminMode && !showItemsPanel ? (
+                  <button
+                    type="button"
+                    onClick={() => router.push("/admin/places")}
+                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-2xl text-neutral-900 shadow-md ring-1 ring-black/5"
+                    aria-label="Close menu editor"
+                  >
+                    <FontAwesomeIcon icon={faXmark} className="text-base" />
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          )}
+          <div className={`mx-auto mt-2 max-w-[620px] overflow-hidden rounded-[30px] shadow-sm ${isLightTheme ? "border border-neutral-200 bg-white" : "border border-white/10 bg-[#121212]"}`}>
           <div
             className="relative h-44 overflow-hidden"
             style={
@@ -977,15 +1146,6 @@ export default function PublicMenuPage() {
             ) : (
               <div className="absolute inset-0 bg-black/20" />
             )}
-            {isAdminMode ? (
-              <button
-                type="button"
-                onClick={() => router.push("/admin/places")}
-                className="absolute left-3 top-3 z-30 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-2xl text-neutral-900 shadow"
-              >
-                <FontAwesomeIcon icon={faXmark} className="text-base" />
-              </button>
-            ) : null}
             {place?.logoUrl ? (
             <div className="pointer-events-none absolute inset-0 grid place-items-center">
                 <div className="h-20 w-20 overflow-hidden rounded-full border-2 border-white/90 bg-white shadow-xl">
@@ -1000,8 +1160,14 @@ export default function PublicMenuPage() {
                 onChange={(event) => {
                   const nextLang = event.target.value as LocaleCode;
                   setContentLanguage(nextLang);
-                  const nextMenu = resolvedActiveMenuId ? `menu=${resolvedActiveMenuId}&` : "";
-                  router.replace(`/${locale}/p/${slug}?${nextMenu}lang=${nextLang}`);
+                  router.replace(
+                    publicMenuHref({
+                      menu: resolvedActiveMenuId,
+                      category: categoryFromQuery,
+                      lang: nextLang,
+                    }),
+                    { scroll: false },
+                  );
                 }}
                 className="rounded-lg bg-white/95 px-2 py-1 text-xs font-semibold text-neutral-900 shadow outline-none"
               >
@@ -1144,43 +1310,120 @@ export default function PublicMenuPage() {
             ) : null}
 
             <div className={`mt-4 space-y-5 ${isAdminMode ? "pb-20" : "pb-4"}`}>
-              <CategoryList
-                categories={filteredActiveMenuCategories.map((category) => ({
-                  id: category._id,
-                  name: pickLocalized(category.nameI18n, category.name),
-                  imageUrl: category.imageUrl,
-                }))}
-                activeCategoryId={resolvedActiveCategoryId}
-                accentColor={accentColor}
-                isAdmin={isAdminMode}
-                onMoveUp={(categoryId) => void moveCategory(categoryId, "left")}
-                onMoveDown={(categoryId) => void moveCategory(categoryId, "right")}
-                onEdit={(categoryId) => {
-                  const category = activeMenuCategories.find((entry) => entry._id === categoryId);
-                  if (category) openEditCategoryModal(category);
-                }}
-                onDelete={(categoryId) => {
-                  const category = activeMenuCategories.find((entry) => entry._id === categoryId);
-                  if (category) setCategoryToRemove(category);
-                }}
-                onAddUnder={() => openCreateCategoryModal()}
-                onSelect={handleCategorySelect}
-              />
-              {filteredActiveMenuCategories.length === 0 ? (
-                <div
-                  className={`w-full rounded-2xl border border-dashed p-6 text-center text-sm ${
-                    isLightTheme ? "border-neutral-300 text-neutral-500" : "border-white/20 text-neutral-400"
-                  }`}
-                >
-                  No categories found
+              {showItemsPanel ? (
+                <div className="space-y-4">
+                  <h3 className={`text-xl font-semibold ${isLightTheme ? "text-neutral-900" : "text-neutral-100"}`}>
+                    {pickLocalized(activeCategory?.nameI18n, activeCategory?.name ?? "")}
+                  </h3>
+                  {filteredMenuItems.length === 0 ? (
+                    <div className="space-y-3">
+                      <div
+                        className={`w-full rounded-2xl border border-dashed p-8 text-center text-sm ${
+                          isLightTheme ? "border-neutral-300 text-neutral-500" : "border-neutral-600 text-neutral-400"
+                        }`}
+                      >
+                        {t("items.empty")}
+                      </div>
+                      {isAdminMode ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingItem(null);
+                            setItemModalOpen(true);
+                          }}
+                          className="inline-flex w-full items-center justify-center rounded-full py-1 text-2xl text-white transition brightness-95 hover:brightness-105"
+                          style={{ backgroundColor: accentColor }}
+                        >
+                          +
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {isAdminMode ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingItem(null);
+                            setItemModalOpen(true);
+                          }}
+                          className="inline-flex w-full items-center justify-center rounded-full py-1 text-2xl text-white transition brightness-95 hover:brightness-105"
+                          style={{ backgroundColor: accentColor }}
+                        >
+                          +
+                        </button>
+                      ) : null}
+                      <ItemList
+                        currencySymbol={place?.currencySymbol}
+                        accentColor={accentColor}
+                        isLight={isLightTheme}
+                        isAdmin={isAdminMode}
+                        onMoveUp={(id) => void moveItem(id, "up")}
+                        onMoveDown={(id) => void moveItem(id, "down")}
+                        onEdit={(id) => {
+                          const item = activeCategory?.items.find((entry) => entry._id === id) ?? null;
+                          if (!item) return;
+                          setEditingItem(item);
+                          setItemModalOpen(true);
+                        }}
+                        onDelete={(id) => void deleteItem(id)}
+                        onAddUnder={() => {
+                          setEditingItem(null);
+                          setItemModalOpen(true);
+                        }}
+                        items={filteredMenuItems.map((item) => ({
+                          id: item._id,
+                          name: pickLocalized(item.nameI18n, item.name),
+                          description: pickLocalized(item.descriptionI18n, item.description),
+                          imageUrl: item.imageUrl,
+                          price: item.price,
+                          badge: item.badge,
+                        }))}
+                      />
+                    </div>
+                  )}
                 </div>
-              ) : null}
-
+              ) : (
+                <>
+                  <CategoryList
+                    categories={filteredActiveMenuCategories.map((category) => ({
+                      id: category._id,
+                      name: pickLocalized(category.nameI18n, category.name),
+                      imageUrl: category.imageUrl,
+                    }))}
+                    activeCategoryId={categoryFromQuery}
+                    accentColor={accentColor}
+                    isAdmin={isAdminMode}
+                    onMoveUp={(categoryId) => void moveCategory(categoryId, "left")}
+                    onMoveDown={(categoryId) => void moveCategory(categoryId, "right")}
+                    onEdit={(categoryId) => {
+                      const category = activeMenuCategories.find((entry) => entry._id === categoryId);
+                      if (category) openEditCategoryModal(category);
+                    }}
+                    onDelete={(categoryId) => {
+                      const category = activeMenuCategories.find((entry) => entry._id === categoryId);
+                      if (category) setCategoryToRemove(category);
+                    }}
+                    onAddUnder={() => openCreateCategoryModal()}
+                    onSelect={handleCategorySelect}
+                  />
+                  {filteredActiveMenuCategories.length === 0 ? (
+                    <div
+                      className={`w-full rounded-2xl border border-dashed p-6 text-center text-sm ${
+                        isLightTheme ? "border-neutral-300 text-neutral-500" : "border-white/20 text-neutral-400"
+                      }`}
+                    >
+                      No categories found
+                    </div>
+                  ) : null}
+                </>
+              )}
             </div>
           </div>
 
           {isAdminMode ? <BottomNav locale={locale} slug={slug} active="menu" accentColor={accentColor} /> : null}
         </div>
+        </>
       )}
 
       {isAdminMode && menuEditorOpen ? (
@@ -1834,7 +2077,10 @@ export default function PublicMenuPage() {
       {isAdminMode ? (
         <AddItemModal
           open={itemModalOpen}
-          onClose={() => setItemModalOpen(false)}
+          onClose={() => {
+            setItemModalOpen(false);
+            setEditingItem(null);
+          }}
           item={editingItem}
           enabledLanguages={enabledLanguages}
           primaryLanguage={primaryLanguage}

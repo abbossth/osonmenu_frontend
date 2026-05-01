@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyUser, normalizeSlug } from "@/app/api/_utils/menu-builder";
+import { getBearerToken, verifyUser, normalizeSlug } from "@/app/api/_utils/menu-builder";
 import { getDefaultCategoryImage } from "@/lib/category-default-image";
 import { connectToMongoDB } from "@/lib/mongodb";
 import { CategoryEntityModel } from "@/models/CategoryEntity";
@@ -194,6 +194,9 @@ function mergePersistedMenus(
 }
 
 export async function GET(request: NextRequest, { params }: Params) {
+  const perfStart = performance.now();
+  const hasBearer = Boolean(getBearerToken(request));
+
   try {
     let authUser: { uid: string; email: string } | null = null;
     try {
@@ -266,6 +269,14 @@ export async function GET(request: NextRequest, { params }: Params) {
         ? await ItemEntityModel.find({ establishmentId: establishment._id, categoryId: { $in: categoryIds } }).lean()
         : [];
 
+    const itemsByCategoryId = new Map<string, typeof itemDocs>();
+    for (const item of itemDocs) {
+      const key = String(item.categoryId);
+      const bucket = itemsByCategoryId.get(key);
+      if (bucket) bucket.push(item);
+      else itemsByCategoryId.set(key, [item]);
+    }
+
     const hasEntityCategories = categoryDocs.length > 0;
     const useEntityCollections = hasEntityCategories || itemDocs.length > 0;
 
@@ -274,9 +285,8 @@ export async function GET(request: NextRequest, { params }: Params) {
       ? (() => {
           const entityCategories = categoryDocs
             .map((category, categoryIndex) => {
-            const items = itemDocs
-              .filter((item) => String(item.categoryId) === String(category._id))
-              .map((item, itemIndex) => ({
+            const categoryItems = itemsByCategoryId.get(String(category._id)) ?? [];
+            const items = categoryItems.map((item, itemIndex) => ({
                 _id: String(item._id),
                 name: typeof item.name === "string" ? item.name : "",
                 nameI18n: normalizeI18n(item.nameI18n, typeof item.name === "string" ? item.name : ""),
@@ -366,7 +376,7 @@ export async function GET(request: NextRequest, { params }: Params) {
       : ["uz", "ru", "en"];
     const rawEstablishment = establishment.toObject() as Record<string, unknown>;
 
-    return NextResponse.json({
+    const payload = {
       place: {
         _id: String(establishment._id),
         ownerId,
@@ -412,7 +422,35 @@ export async function GET(request: NextRequest, { params }: Params) {
       },
       isOwner,
       canEdit,
-    });
+    };
+
+    const durationMs = Math.round(performance.now() - perfStart);
+    const verbosePerf = process.env.PERF_API_LOG === "1";
+    if (verbosePerf || durationMs >= 2000) {
+      console.log(
+        JSON.stringify({
+          tag: "api.places.menu",
+          ms: durationMs,
+          slug,
+          categories: categoryDocs.length,
+          items: itemDocs.length,
+          bearer: hasBearer,
+          canEdit,
+          country: request.headers.get("x-vercel-ip-country") ?? undefined,
+          region: request.headers.get("x-vercel-ip-country-region") ?? undefined,
+        }),
+      );
+    }
+
+    const headers = new Headers();
+    headers.set("Server-Timing", `app;dur=${durationMs}`);
+    if (!canEdit) {
+      headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
+    } else {
+      headers.set("Cache-Control", "private, no-store");
+    }
+
+    return NextResponse.json(payload, { headers });
   } catch (error) {
     console.error("[API /api/places/[slug]/menu GET] Failed", error);
     return NextResponse.json({ error: "Failed to fetch menu" }, { status: 500 });
