@@ -201,6 +201,7 @@ export default function PublicMenuPage() {
   const tempItemIdRef = useRef(0);
   const langFromQueryRef = useRef<LocaleCode | null>(langFromQuery);
   langFromQueryRef.current = langFromQuery;
+  const wasItemsPanelRef = useRef(false);
   const logoInputRef = useRef<HTMLInputElement | null>(null);
   const backgroundInputRef = useRef<HTMLInputElement | null>(null);
   const categoryImageInputRef = useRef<HTMLInputElement | null>(null);
@@ -409,6 +410,14 @@ export default function PublicMenuPage() {
       setActiveCategoryId(firstId);
     }
   }, [place, categoryFromQuery, menuFromQuery]);
+
+  /** Scroll to top when opening the items list (category → items); keeps category grid scroll position when going back. */
+  useEffect(() => {
+    if (showItemsPanel && !wasItemsPanelRef.current) {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    }
+    wasItemsPanelRef.current = showItemsPanel;
+  }, [showItemsPanel]);
 
   useEffect(() => {
     async function verifyEditAccess() {
