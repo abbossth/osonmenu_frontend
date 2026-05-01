@@ -192,7 +192,7 @@ const establishmentSchema = new Schema<EstablishmentDocument>(
     ownerId: { type: String, required: true, index: true },
     userId: { type: String, required: true, index: true },
     name: { type: String, required: true, trim: true },
-    slug: { type: String, required: true, index: true, lowercase: true, trim: true },
+    slug: { type: String, required: true, lowercase: true, trim: true },
     colorTheme: { type: String, enum: ["light", "dark"], default: "light" },
     color: { type: String, default: "#f7906c" },
     currencySymbol: { type: String, default: "" },
