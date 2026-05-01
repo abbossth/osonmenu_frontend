@@ -18,6 +18,8 @@ type ItemCardProps = {
   accentColor?: string;
   isLight?: boolean;
   isAdmin?: boolean;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
   onMoveUp?: (id: string) => void;
   onMoveDown?: (id: string) => void;
   onEdit?: (id: string) => void;
@@ -41,6 +43,8 @@ export function ItemCard({
   accentColor = "#ff4048",
   isLight = false,
   isAdmin = false,
+  canMoveUp = true,
+  canMoveDown = true,
   onMoveUp,
   onMoveDown,
   onEdit,
@@ -83,10 +87,22 @@ export function ItemCard({
                   isLight ? "border border-black/10 bg-white/85 text-neutral-800" : "border border-white/20 bg-black/70 text-white"
                 }`}
               >
-                <button type="button" onClick={() => onMoveUp?.(id)}><FontAwesomeIcon icon={faArrowUp} /></button>
-                <button type="button" onClick={() => onMoveDown?.(id)}><FontAwesomeIcon icon={faArrowDown} /></button>
-                <button type="button" onClick={() => onEdit?.(id)}><FontAwesomeIcon icon={faPen} /></button>
-                <button type="button" onClick={() => onDelete?.(id)}><FontAwesomeIcon icon={faTrashCan} /></button>
+                {canMoveUp ? (
+                  <button type="button" aria-label="Move item up" onClick={() => onMoveUp?.(id)}>
+                    <FontAwesomeIcon icon={faArrowUp} />
+                  </button>
+                ) : null}
+                {canMoveDown ? (
+                  <button type="button" aria-label="Move item down" onClick={() => onMoveDown?.(id)}>
+                    <FontAwesomeIcon icon={faArrowDown} />
+                  </button>
+                ) : null}
+                <button type="button" aria-label="Edit item" onClick={() => onEdit?.(id)}>
+                  <FontAwesomeIcon icon={faPen} />
+                </button>
+                <button type="button" aria-label="Delete item" onClick={() => onDelete?.(id)}>
+                  <FontAwesomeIcon icon={faTrashCan} />
+                </button>
               </div>
             ) : null}
           </div>
@@ -106,10 +122,22 @@ export function ItemCard({
                 isLight ? "border border-black/10 bg-neutral-100 text-neutral-800" : "border border-white/20 bg-black/40 text-white"
               }`}
             >
-              <button type="button" onClick={() => onMoveUp?.(id)}><FontAwesomeIcon icon={faArrowUp} /></button>
-              <button type="button" onClick={() => onMoveDown?.(id)}><FontAwesomeIcon icon={faArrowDown} /></button>
-              <button type="button" onClick={() => onEdit?.(id)}><FontAwesomeIcon icon={faPen} /></button>
-              <button type="button" onClick={() => onDelete?.(id)}><FontAwesomeIcon icon={faTrashCan} /></button>
+              {canMoveUp ? (
+                <button type="button" aria-label="Move item up" onClick={() => onMoveUp?.(id)}>
+                  <FontAwesomeIcon icon={faArrowUp} />
+                </button>
+              ) : null}
+              {canMoveDown ? (
+                <button type="button" aria-label="Move item down" onClick={() => onMoveDown?.(id)}>
+                  <FontAwesomeIcon icon={faArrowDown} />
+                </button>
+              ) : null}
+              <button type="button" aria-label="Edit item" onClick={() => onEdit?.(id)}>
+                <FontAwesomeIcon icon={faPen} />
+              </button>
+              <button type="button" aria-label="Delete item" onClick={() => onDelete?.(id)}>
+                <FontAwesomeIcon icon={faTrashCan} />
+              </button>
             </div>
           ) : null}
           <h4 className={`text-lg font-semibold ${isLight ? "text-neutral-900" : "text-white"}`}>{name}</h4>

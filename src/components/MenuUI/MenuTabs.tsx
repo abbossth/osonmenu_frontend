@@ -55,8 +55,11 @@ export function MenuTabs({
             <FontAwesomeIcon icon={faPlus} />
           </button>
         ) : null}
-        {menus.map((menu) => {
+        {menus.map((menu, index) => {
           const active = menu.id === activeMenuId;
+          const canMoveLeft = index > 0;
+          const canMoveRight = index < menus.length - 1;
+          const canDelete = menus.length > 1;
           return (
             <div key={menu.id} className="shrink-0 space-y-1">
               <button
@@ -85,18 +88,24 @@ export function MenuTabs({
                     isLight ? "border border-neutral-200 bg-neutral-100 text-neutral-700" : "border border-white/10 bg-black/40 text-white"
                   }`}
                 >
-                  <button type="button" onClick={() => onMoveLeft?.(menu.id)} className="cursor-pointer">
-                    <FontAwesomeIcon icon={faArrowLeft} />
-                  </button>
-                  <button type="button" onClick={() => onEdit?.(menu.id)} className="cursor-pointer">
+                  {canMoveLeft ? (
+                    <button type="button" onClick={() => onMoveLeft?.(menu.id)} className="cursor-pointer" aria-label="Move menu left">
+                      <FontAwesomeIcon icon={faArrowLeft} />
+                    </button>
+                  ) : null}
+                  <button type="button" onClick={() => onEdit?.(menu.id)} className="cursor-pointer" aria-label="Rename menu">
                     <FontAwesomeIcon icon={faPen} />
                   </button>
-                  <button type="button" onClick={() => onMoveRight?.(menu.id)} className="cursor-pointer">
-                    <FontAwesomeIcon icon={faArrowRight} />
-                  </button>
-                  <button type="button" onClick={() => onDelete?.(menu.id)} className="cursor-pointer">
-                    <FontAwesomeIcon icon={faTrashCan} />
-                  </button>
+                  {canMoveRight ? (
+                    <button type="button" onClick={() => onMoveRight?.(menu.id)} className="cursor-pointer" aria-label="Move menu right">
+                      <FontAwesomeIcon icon={faArrowRight} />
+                    </button>
+                  ) : null}
+                  {canDelete ? (
+                    <button type="button" onClick={() => onDelete?.(menu.id)} className="cursor-pointer" aria-label="Delete menu">
+                      <FontAwesomeIcon icon={faTrashCan} />
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
             </div>

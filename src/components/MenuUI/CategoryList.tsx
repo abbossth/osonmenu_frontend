@@ -52,6 +52,8 @@ export function CategoryList({
               active={category.id === activeCategoryId}
               accentColor={accentColor}
               isAdmin={isAdmin}
+              canMoveUp={index > 0}
+              canMoveDown={index < categories.length - 1}
               onMoveUp={onMoveUp}
               onMoveDown={onMoveDown}
               onEdit={onEdit}

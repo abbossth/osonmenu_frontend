@@ -42,7 +42,7 @@ export function ItemList({
   return (
     <div className="space-y-3">
       <AnimatePresence mode="popLayout">
-        {items.map((item) => (
+        {items.map((item, index) => (
           <ItemCard
             key={item.id}
             id={item.id}
@@ -55,6 +55,8 @@ export function ItemList({
             accentColor={accentColor}
             isLight={isLight}
             isAdmin={isAdmin}
+            canMoveUp={index > 0}
+            canMoveDown={index < items.length - 1}
             onMoveUp={onMoveUp}
             onMoveDown={onMoveDown}
             onEdit={onEdit}
