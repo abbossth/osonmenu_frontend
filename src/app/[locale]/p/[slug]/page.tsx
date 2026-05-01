@@ -1103,7 +1103,7 @@ export default function PublicMenuPage() {
       ) : (
         <>
           {(showItemsPanel || (isAdminMode && !showItemsPanel)) && (
-            <div className="pointer-events-none fixed left-0 right-0 top-[max(1.25rem,calc(env(safe-area-inset-top,0px)+1rem))] z-30 flex justify-center pl-9 pr-5 sm:pl-12 sm:pr-6">
+            <div className="pointer-events-none fixed left-0 right-0 top-[max(1.25rem,calc(env(safe-area-inset-top,0px)+1rem))] z-30 flex justify-center pl-[max(1rem,env(safe-area-inset-left,0px))] pr-4 sm:pl-12 sm:pr-6">
               <div className="pointer-events-auto flex w-full max-w-[620px] justify-start gap-2">
                 {showItemsPanel ? (
                   <button
