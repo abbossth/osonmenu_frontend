@@ -27,6 +27,13 @@ type CategoryFormState = {
 };
 type LocaleCode = "uz" | "ru" | "en";
 const ALL_LOCALES: LocaleCode[] = ["uz", "ru", "en"];
+
+function normalizeEnabledLanguages(place: Pick<MenuPlace, "enabledLanguages"> | null | undefined): LocaleCode[] {
+  const raw = place?.enabledLanguages;
+  if (!Array.isArray(raw) || raw.length === 0) return [...ALL_LOCALES];
+  const filtered = raw.filter((entry): entry is LocaleCode => entry === "uz" || entry === "ru" || entry === "en");
+  return filtered.length ? filtered : ["uz"];
+}
 type EstablishmentFormState = {
   name: string;
   colorTheme: "light" | "dark";
@@ -257,13 +264,7 @@ export default function PublicMenuPage() {
   const isAdminMode = canEdit;
   const isLightTheme = (place?.colorTheme ?? "light") === "light";
   const accentColor = place?.color?.trim() || "#f7906c";
-  const enabledLanguages = useMemo(
-    () =>
-      Array.isArray(place?.enabledLanguages) && place.enabledLanguages.length
-        ? place.enabledLanguages
-        : ALL_LOCALES,
-    [place?.enabledLanguages],
-  );
+  const enabledLanguages = useMemo(() => normalizeEnabledLanguages(place), [place]);
   const primaryLanguage: LocaleCode = useMemo(() => {
     const base = place?.language;
     if (base === "uz" || base === "ru" || base === "en") return base;
@@ -298,10 +299,11 @@ export default function PublicMenuPage() {
   };
 
   useEffect(() => {
-    if (!ALL_LOCALES.includes(contentLanguage)) {
-      setContentLanguage("uz");
-    }
-  }, [contentLanguage]);
+    if (!place) return;
+    if (enabledLanguages.includes(contentLanguage)) return;
+    const next = enabledLanguages.includes(primaryLanguage) ? primaryLanguage : enabledLanguages[0] ?? "uz";
+    setContentLanguage(next);
+  }, [place, enabledLanguages, primaryLanguage, contentLanguage]);
 
   function pickLocalized(text: MenuLocalizedText | undefined, fallback: string) {
     if (!text) return fallback;
@@ -331,13 +333,16 @@ export default function PublicMenuPage() {
         }
         const data = (await res.json()) as MenuResponse;
         setPlace(data.place);
-        const availableLanguages = ALL_LOCALES;
+        const availableLanguages = normalizeEnabledLanguages(data.place);
         const qLang = langFromQueryRef.current;
+        const placeLang = data.place.language;
         const preferredLanguage =
           qLang && availableLanguages.includes(qLang)
             ? qLang
-            : availableLanguages.includes(data.place.language)
-              ? data.place.language
+            : placeLang === "uz" || placeLang === "ru" || placeLang === "en"
+              ? availableLanguages.includes(placeLang)
+                ? placeLang
+                : availableLanguages[0] || "uz"
               : availableLanguages[0] || "uz";
         setContentLanguage(preferredLanguage);
         setCanEdit(Boolean(data.canEdit || data.isOwner));
@@ -376,9 +381,10 @@ export default function PublicMenuPage() {
 
   /** Menu content language from `?lang=` — no refetch; keeps state in sync on back/forward or shared links. */
   useEffect(() => {
-    if (!langFromQuery || !ALL_LOCALES.includes(langFromQuery)) return;
+    if (!langFromQuery || !place) return;
+    if (!enabledLanguages.includes(langFromQuery)) return;
     setContentLanguage(langFromQuery);
-  }, [langFromQuery]);
+  }, [langFromQuery, place, enabledLanguages]);
 
   /** Keep selection in sync with URL when `menu` / `category` change without refetching (e.g. browser back/forward). */
   useEffect(() => {
@@ -1154,30 +1160,32 @@ export default function PublicMenuPage() {
                 </div>
               </div>
             ) : null}
-            <div className="absolute bottom-3 right-3 z-30">
-              <select
-                value={contentLanguage}
-                onChange={(event) => {
-                  const nextLang = event.target.value as LocaleCode;
-                  setContentLanguage(nextLang);
-                  router.replace(
-                    publicMenuHref({
-                      menu: resolvedActiveMenuId,
-                      category: categoryFromQuery,
-                      lang: nextLang,
-                    }),
-                    { scroll: false },
-                  );
-                }}
-                className="rounded-lg bg-white/95 px-2 py-1 text-xs font-semibold text-neutral-900 shadow outline-none"
-              >
-                {ALL_LOCALES.map((langCode) => (
-                  <option key={langCode} value={langCode}>
-                    {languageLabel[langCode]}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {enabledLanguages.length > 1 ? (
+              <div className="absolute bottom-3 right-3 z-30">
+                <select
+                  value={contentLanguage}
+                  onChange={(event) => {
+                    const nextLang = event.target.value as LocaleCode;
+                    setContentLanguage(nextLang);
+                    router.replace(
+                      publicMenuHref({
+                        menu: resolvedActiveMenuId,
+                        category: categoryFromQuery,
+                        lang: nextLang,
+                      }),
+                      { scroll: false },
+                    );
+                  }}
+                  className="rounded-lg bg-white/95 px-2 py-1 text-xs font-semibold text-neutral-900 shadow outline-none"
+                >
+                  {enabledLanguages.map((langCode) => (
+                    <option key={langCode} value={langCode}>
+                      {languageLabel[langCode]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
           </div>
 
           <div
