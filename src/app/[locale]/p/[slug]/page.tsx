@@ -12,12 +12,13 @@ import { BottomNav } from "@/components/MenuUI/BottomNav";
 import { ImageEditorModal } from "@/components/MenuUI/ImageEditorModal";
 import { ItemList } from "@/components/MenuUI/ItemList";
 import { MenuTabs } from "@/components/MenuUI/MenuTabs";
+import { MenuBlockedScreen, OwnerAccessBanner, type MenuAccessInfo } from "@/components/MenuUI/MenuBlocked";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getDefaultCategoryImage } from "@/lib/category-default-image";
 import { uploadImageToFirebase } from "@/lib/firebase-upload";
 import type { MenuCategory, MenuGroup, MenuItem, MenuLocalizedText, MenuPlace } from "@/components/MenuBuilder/types";
 
-type MenuResponse = { place: MenuPlace; isOwner?: boolean; canEdit?: boolean };
+type MenuResponse = { place: MenuPlace; isOwner?: boolean; canEdit?: boolean; access?: MenuAccessInfo };
 type CategoryFormState = {
   name: string;
   nameI18n: MenuLocalizedText;
@@ -131,6 +132,8 @@ export default function PublicMenuPage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [canEdit, setCanEdit] = useState(false);
+  const [blockedInfo, setBlockedInfo] = useState<{ name: string; logoUrl: string; message: string } | null>(null);
+  const [access, setAccess] = useState<MenuAccessInfo | null>(null);
 
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
@@ -328,12 +331,24 @@ export default function PublicMenuPage() {
         }
 
         const res = await fetch(`/api/places/${slug}/menu`, { headers });
+        if (res.status === 403) {
+          const blocked = (await res.clone().json().catch(() => null)) as
+            | { error?: string; name?: string; logoUrl?: string; message?: string }
+            | null;
+          if (blocked?.error === "MENU_BLOCKED") {
+            setPlace(null);
+            setBlockedInfo({ name: blocked.name ?? "", logoUrl: blocked.logoUrl ?? "", message: blocked.message ?? "" });
+            return;
+          }
+        }
+        setBlockedInfo(null);
         if (!res.ok) {
           const data = (await res.json().catch(() => null)) as { error?: string } | null;
           throw new Error(data?.error || "Failed to fetch menu");
         }
         const data = (await res.json()) as MenuResponse;
         setPlace(data.place);
+        setAccess(data.access ?? null);
         const availableLanguages = normalizeEnabledLanguages(data.place);
         const qLang = langFromQueryRef.current;
         const placeLang = data.place.language;
@@ -1099,8 +1114,20 @@ export default function PublicMenuPage() {
     }
   }
 
+  if (blockedInfo && !pageLoading) {
+    return (
+      <MenuBlockedScreen
+        locale={locale}
+        name={blockedInfo.name}
+        logoUrl={blockedInfo.logoUrl}
+        message={blockedInfo.message}
+      />
+    );
+  }
+
   return (
     <div className={isLightTheme ? "min-h-screen bg-neutral-100 text-neutral-900" : "min-h-screen bg-[#0f0f0f] text-neutral-100"}>
+      {canEdit ? <OwnerAccessBanner locale={locale} access={access} /> : null}
       {error ? (
         <div className="mx-auto mb-2 max-w-[620px] rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
           {error}
