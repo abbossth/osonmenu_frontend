@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAccessState } from "@/lib/establishment-access";
+import { isSuperAdminUid } from "@/lib/super-admin";
 import { getBearerToken, verifyUser, normalizeSlug } from "@/app/api/_utils/menu-builder";
 import { getDefaultCategoryImage } from "@/lib/category-default-image";
 import { connectToMongoDB } from "@/lib/mongodb";
@@ -259,6 +261,23 @@ export async function GET(request: NextRequest, { params }: Params) {
         }),
     );
     const canEdit = isOwner || isTeamMember;
+
+    // Obuna: to'lanmagan / o'chirilgan restoran menyusi mijozlarga ko'rsatilmaydi.
+    // Egasi va jamoasi menyuni ko'ra oladi (ogohlantirish bilan), super-admin ham.
+    const access = getAccessState(establishment);
+    if (access.blocked && !canEdit && !isSuperAdminUid(authUser?.uid)) {
+      return NextResponse.json(
+        {
+          error: "MENU_BLOCKED",
+          blocked: true,
+          message: access.message,
+          name: establishment.name,
+          logoUrl: establishment.logoUrl || "",
+        },
+        { status: 403, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+
     const [menuDocs, categoryDocs] = await Promise.all([
       MenuEntityModel.find({ establishmentId: establishment._id }).lean(),
       CategoryEntityModel.find({ establishmentId: establishment._id }).lean(),
@@ -422,6 +441,7 @@ export async function GET(request: NextRequest, { params }: Params) {
       },
       isOwner,
       canEdit,
+      access: canEdit ? access : undefined,
     };
 
     const durationMs = Math.round(performance.now() - perfStart);

@@ -95,6 +95,16 @@ export type EstablishmentDocument = {
     isVisible?: boolean;
   }[];
   enabledLanguages?: Array<"uz" | "ru" | "en">;
+  /** Super-admin: menyu qo'lda o'chirilganmi (to'lov qilinmagan va h.k.) */
+  isBlocked?: boolean;
+  /** Super-admin: shu vaqtgacha to'langan. null — muddatsiz (eski restoranlar). */
+  paidUntil?: Date | null;
+  /** Bloklangan menyuda mijozlarga ko'rsatiladigan qo'shimcha xabar */
+  blockedMessage?: string;
+  /** Super-admin: oylik to'lov summasi (so'm) */
+  monthlyFee?: number;
+  /** Super-admin: faqat adminlar ko'radigan izoh */
+  adminNote?: string;
   createdAt: Date;
 };
 
@@ -272,6 +282,11 @@ const establishmentSchema = new Schema<EstablishmentDocument>(
     categories: { type: [menuCategorySchema], default: [] },
     addons: { type: [addonGroupSchema], default: [] },
     scheduledPrices: { type: [scheduledPriceSchema], default: [] },
+    isBlocked: { type: Boolean, default: false },
+    paidUntil: { type: Date, default: null },
+    blockedMessage: { type: String, default: "", trim: true },
+    monthlyFee: { type: Number, default: 0, min: 0 },
+    adminNote: { type: String, default: "", trim: true },
     createdAt: { type: Date, default: Date.now },
   },
   { versionKey: false },
