@@ -9,6 +9,15 @@ import { PLACE_FIELDS, type PlaceLean, noStore, requireSuperAdmin, serializePlac
 
 type Params = { params: Promise<{ id: string }> };
 
+const BLOCK_REASONS = ["payment", "request", "violation", "other"] as const;
+type BlockReason = (typeof BLOCK_REASONS)[number];
+const BLOCK_REASON_LABELS: Record<BlockReason, string> = {
+  payment: "To'lov qilinmadi",
+  request: "Restoran so'rovi",
+  violation: "Qoidabuzarlik",
+  other: "Boshqa",
+};
+
 function str(value: unknown, max = 500) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
@@ -25,7 +34,7 @@ function bad(message: string) {
  *
  * body.action:
  *  - "extend"  { months? | days? | until?: "YYYY-MM-DD", extendFromCurrent?, amount?, note? } — muddat bilan yoqish
- *  - "block"   { message?, note? }      — darhol o'chirish
+ *  - "block"   { reason?: "payment"|"request"|"violation"|"other", message?, note? } — darhol o'chirish
  *  - "unblock" { }                      — qayta yoqish (to'langan muddat hali tugamagan bo'lsa)
  *  - "update"  { monthlyFee?, adminNote? }
  */
@@ -81,8 +90,10 @@ export async function POST(request: NextRequest, { params }: Params) {
         note: str(body.note, 200),
       });
     } else if (action === "block") {
-      Object.assign(set, { isBlocked: true, blockedMessage: str(body.message, 160) });
-      Object.assign(log, { note: str(body.note, 200) });
+      const reason = str(body.reason, 20);
+      const blockReason = BLOCK_REASONS.includes(reason as BlockReason) ? (reason as BlockReason) : "payment";
+      Object.assign(set, { isBlocked: true, blockReason, blockedMessage: str(body.message, 160) });
+      Object.assign(log, { note: [BLOCK_REASON_LABELS[blockReason], str(body.note, 200)].filter(Boolean).join(" · ") });
     } else if (action === "unblock") {
       Object.assign(set, { isBlocked: false, blockedMessage: "" });
       Object.assign(log, { until: currentUntil });

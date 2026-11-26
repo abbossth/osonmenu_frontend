@@ -26,6 +26,7 @@ type Place = {
   isBlocked: boolean;
   paidUntil: string | null;
   blockedMessage: string;
+  blockReason: "payment" | "request" | "violation" | "other";
   monthlyFee: number;
   adminNote: string;
 };
@@ -48,6 +49,12 @@ type Period = { months: number } | { days: number } | { custom: true };
 
 /* ---------------- Yordamchilar ---------------- */
 const SOON_DAYS = 3;
+const BLOCK_REASON_LABEL: Record<string, string> = {
+  payment: "Sabab: to'lov qilinmadi",
+  request: "Sabab: restoran so'rovi",
+  violation: "Sabab: qoidabuzarlik",
+  other: "Sabab: boshqa",
+};
 const TZ = 5 * 60 * 60 * 1000;
 const MONTHS = ["yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avgust", "sentabr", "oktabr", "noyabr", "dekabr"];
 
@@ -85,7 +92,7 @@ function statusOf(place: Place, now: number) {
     key === "expired"
       ? days === 0 ? "Bugun tugadi" : `${Math.abs(days)} kun oldin tugagan`
       : key === "manual"
-        ? place.paidUntil && days > 0 ? `To'langan: ${fmtDate(place.paidUntil)} gacha` : ""
+        ? BLOCK_REASON_LABEL[place.blockReason] ?? ""
         : key === "unlimited" ? "Muddat belgilanmagan" : `${days} kun qoldi`;
   return { key, blocked: a.blocked, sub, daysLeft: a.daysLeft };
 }
@@ -795,30 +802,46 @@ function BlockDialog({
   onSubmit: (body: Record<string, unknown>) => Promise<void>;
 }) {
   const [message, setMessage] = useState("");
-  const [reason, setReason] = useState("To'lov qilinmadi");
-  const { busy, error, submit } = useSubmit(() => onSubmit({ message, note: reason }));
+  const [reason, setReason] = useState<"payment" | "request" | "violation" | "other">("payment");
+  const { busy, error, submit } = useSubmit(() => onSubmit({ message, reason }));
+  const isPayment = reason === "payment";
   return (
     <Modal
       title="Menyuni o'chirish"
       subtitle={
         <>
-          <b className="text-neutral-200">{place.name}</b> menyusi darhol yopiladi. Mijozlar &quot;Menyu vaqtincha mavjud emas&quot;
-          xabarini ko&apos;radi, egasi esa ogohlantirish oladi. To&apos;langan muddat saqlanib qoladi.
+          <b className="text-neutral-200">{place.name}</b> menyusi darhol yopiladi va uning o&apos;rniga xabar chiqadi.
+          To&apos;langan muddat saqlanib qoladi.
         </>
       }
       onClose={onClose}
     >
       <form onSubmit={submit} className="flex flex-col gap-4">
-        <Field label="Menyuda ko'rsatiladigan qo'shimcha xabar (ixtiyoriy)">
-          <input className={inputCls} maxLength={160} placeholder="Masalan: Tez orada qaytamiz!" value={message} onChange={(e) => setMessage(e.target.value)} />
-        </Field>
-        <Field label="Sabab (faqat tarix uchun)">
-          <select className={inputCls} value={reason} onChange={(e) => setReason(e.target.value)}>
-            <option>To&apos;lov qilinmadi</option>
-            <option>Restoran so&apos;rovi</option>
-            <option>Qoidabuzarlik</option>
-            <option>Boshqa</option>
+        <Field label="Sabab">
+          <select className={inputCls} value={reason} onChange={(e) => setReason(e.target.value as typeof reason)}>
+            <option value="payment">To&apos;lov qilinmadi</option>
+            <option value="request">Restoran so&apos;rovi</option>
+            <option value="violation">Qoidabuzarlik</option>
+            <option value="other">Boshqa</option>
           </select>
+        </Field>
+        <div className="rounded-xl border border-dashed border-white/10 bg-white/5 px-4 py-3 text-sm leading-relaxed text-neutral-300">
+          {isPayment ? (
+            <>
+              <b className="text-red-400">Mijozlar ko&apos;radi:</b> &quot;Ushbu restoran OsonMenu xizmati uchun to&apos;lovni amalga
+              oshirmagani sababli menyu vaqtincha o&apos;chirilgan.&quot;
+              <br />
+              <b className="text-red-400">Egasi ko&apos;radi:</b> &quot;To&apos;lov talab qilinadi&quot; + bog&apos;lanish tugmalari.
+            </>
+          ) : (
+            <>
+              <b className="text-orange-300">Mijozlar ko&apos;radi:</b> &quot;Menyu vaqtincha mavjud emas&quot; (to&apos;lov haqida
+              gapirilmaydi).
+            </>
+          )}
+        </div>
+        <Field label="Qo'shimcha xabar (ixtiyoriy, menyu o'rnida ko'rsatiladi)">
+          <input className={inputCls} maxLength={160} placeholder="Masalan: Tez orada qaytamiz!" value={message} onChange={(e) => setMessage(e.target.value)} />
         </Field>
         {error ? <p className="text-sm text-red-400">{error}</p> : null}
         <DialogActions onClose={onClose} busy={busy} submitLabel="O'chirish" submitClass={btn.bad} />
