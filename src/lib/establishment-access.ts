@@ -9,6 +9,7 @@ export type AccessSource = {
   isBlocked?: boolean | null;
   paidUntil?: Date | string | null;
   blockedMessage?: string | null;
+  blockReason?: string | null;
 };
 
 export type AccessState = {
@@ -17,6 +18,8 @@ export type AccessState = {
   paidUntil: string | null;
   daysLeft: number | null;
   message: string;
+  /** Menyu to'lov qilinmagani uchun yopilganmi (muddat tugagan yoki "payment" sababi bilan o'chirilgan) */
+  paymentRequired: boolean;
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -35,9 +38,14 @@ export function getAccessState(source: AccessSource, now = Date.now()): AccessSt
   const daysLeft = paidUntil ? Math.ceil((paidUntil.getTime() - now) / DAY_MS) : null;
   const base = { paidUntil: paidUntil ? paidUntil.toISOString() : null, daysLeft, message };
 
-  if (source.isBlocked) return { ...base, blocked: true, reason: "manual" };
-  if (paidUntil && paidUntil.getTime() <= now) return { ...base, blocked: true, reason: "expired" };
-  return { ...base, blocked: false, reason: null };
+  if (source.isBlocked) {
+    const paymentRequired = !source.blockReason || source.blockReason === "payment";
+    return { ...base, blocked: true, reason: "manual", paymentRequired };
+  }
+  if (paidUntil && paidUntil.getTime() <= now) {
+    return { ...base, blocked: true, reason: "expired", paymentRequired: true };
+  }
+  return { ...base, blocked: false, reason: null, paymentRequired: false };
 }
 
 /** Berilgan vaqtning Toshkent bo'yicha kun oxiri (23:59:59.999). */

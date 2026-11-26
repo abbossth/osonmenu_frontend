@@ -101,6 +101,8 @@ export type EstablishmentDocument = {
   paidUntil?: Date | null;
   /** Bloklangan menyuda mijozlarga ko'rsatiladigan qo'shimcha xabar */
   blockedMessage?: string;
+  /** Nega o'chirilgan: "payment" — to'lov qilinmagan (menyuda to'lov haqida xabar chiqadi) */
+  blockReason?: "payment" | "request" | "violation" | "other";
   /** Super-admin: oylik to'lov summasi (so'm) */
   monthlyFee?: number;
   /** Super-admin: faqat adminlar ko'radigan izoh */
@@ -285,6 +287,7 @@ const establishmentSchema = new Schema<EstablishmentDocument>(
     isBlocked: { type: Boolean, default: false },
     paidUntil: { type: Date, default: null },
     blockedMessage: { type: String, default: "", trim: true },
+    blockReason: { type: String, enum: ["payment", "request", "violation", "other"], default: "payment" },
     monthlyFee: { type: Number, default: 0, min: 0 },
     adminNote: { type: String, default: "", trim: true },
     createdAt: { type: Date, default: Date.now },

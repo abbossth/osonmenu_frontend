@@ -262,10 +262,10 @@ export async function GET(request: NextRequest, { params }: Params) {
     );
     const canEdit = isOwner || isTeamMember;
 
-    // Obuna: to'lanmagan / o'chirilgan restoran menyusi mijozlarga ko'rsatilmaydi.
-    // Egasi va jamoasi menyuni ko'ra oladi (ogohlantirish bilan), super-admin ham.
+    // Obuna: to'lanmagan / o'chirilgan restoran menyusi o'rniga to'lov haqida xabar ko'rsatiladi.
+    // Bu mijozlarga ham, restoran egasi va jamoasiga ham tegishli. Faqat super-admin menyuni ko'ra oladi.
     const access = getAccessState(establishment);
-    if (access.blocked && !canEdit && !isSuperAdminUid(authUser?.uid)) {
+    if (access.blocked && !isSuperAdminUid(authUser?.uid)) {
       return NextResponse.json(
         {
           error: "MENU_BLOCKED",
@@ -273,6 +273,9 @@ export async function GET(request: NextRequest, { params }: Params) {
           message: access.message,
           name: establishment.name,
           logoUrl: establishment.logoUrl || "",
+          paymentRequired: access.paymentRequired,
+          // Muddat va sabab faqat egasi/jamoasiga
+          ...(canEdit ? { isOwner: true, reason: access.reason, paidUntil: access.paidUntil } : {}),
         },
         { status: 403, headers: { "Cache-Control": "no-store" } },
       );

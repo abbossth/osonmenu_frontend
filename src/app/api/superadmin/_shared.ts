@@ -3,7 +3,7 @@ import { verifySuperAdmin } from "@/lib/super-admin";
 import { getAccessState } from "@/lib/establishment-access";
 
 export const PLACE_FIELDS =
-  "name slug ownerId userId phone city logoUrl createdAt isBlocked paidUntil blockedMessage monthlyFee adminNote";
+  "name slug ownerId userId phone city logoUrl createdAt isBlocked paidUntil blockedMessage blockReason monthlyFee adminNote";
 
 export type PlaceLean = {
   _id: unknown;
@@ -18,6 +18,7 @@ export type PlaceLean = {
   isBlocked?: boolean;
   paidUntil?: Date | null;
   blockedMessage?: string;
+  blockReason?: string;
   monthlyFee?: number;
   adminNote?: string;
 };
@@ -37,6 +38,7 @@ export function serializePlace(place: PlaceLean, owner?: { email?: string; fullN
     isBlocked: Boolean(place.isBlocked),
     paidUntil: place.paidUntil ? new Date(place.paidUntil).toISOString() : null,
     blockedMessage: place.blockedMessage ?? "",
+    blockReason: place.blockReason || "payment",
     monthlyFee: typeof place.monthlyFee === "number" ? place.monthlyFee : 0,
     adminNote: place.adminNote ?? "",
     access: getAccessState(place),

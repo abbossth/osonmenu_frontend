@@ -12,7 +12,7 @@ import { BottomNav } from "@/components/MenuUI/BottomNav";
 import { ImageEditorModal } from "@/components/MenuUI/ImageEditorModal";
 import { ItemList } from "@/components/MenuUI/ItemList";
 import { MenuTabs } from "@/components/MenuUI/MenuTabs";
-import { MenuBlockedScreen, OwnerAccessBanner, type MenuAccessInfo } from "@/components/MenuUI/MenuBlocked";
+import { MenuBlockedScreen, OwnerAccessBanner, type MenuAccessInfo, type MenuBlockedInfo } from "@/components/MenuUI/MenuBlocked";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getDefaultCategoryImage } from "@/lib/category-default-image";
 import { uploadImageToFirebase } from "@/lib/firebase-upload";
@@ -132,7 +132,7 @@ export default function PublicMenuPage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [canEdit, setCanEdit] = useState(false);
-  const [blockedInfo, setBlockedInfo] = useState<{ name: string; logoUrl: string; message: string } | null>(null);
+  const [blockedInfo, setBlockedInfo] = useState<MenuBlockedInfo | null>(null);
   const [access, setAccess] = useState<MenuAccessInfo | null>(null);
 
   const [itemModalOpen, setItemModalOpen] = useState(false);
@@ -333,11 +333,19 @@ export default function PublicMenuPage() {
         const res = await fetch(`/api/places/${slug}/menu`, { headers });
         if (res.status === 403) {
           const blocked = (await res.clone().json().catch(() => null)) as
-            | { error?: string; name?: string; logoUrl?: string; message?: string }
+            | (Partial<MenuBlockedInfo> & { error?: string })
             | null;
           if (blocked?.error === "MENU_BLOCKED") {
             setPlace(null);
-            setBlockedInfo({ name: blocked.name ?? "", logoUrl: blocked.logoUrl ?? "", message: blocked.message ?? "" });
+            setBlockedInfo({
+              name: blocked.name ?? "",
+              logoUrl: blocked.logoUrl ?? "",
+              message: blocked.message ?? "",
+              paymentRequired: blocked.paymentRequired !== false,
+              isOwner: Boolean(blocked.isOwner),
+              reason: blocked.reason ?? null,
+              paidUntil: blocked.paidUntil ?? null,
+            });
             return;
           }
         }
@@ -1116,12 +1124,7 @@ export default function PublicMenuPage() {
 
   if (blockedInfo && !pageLoading) {
     return (
-      <MenuBlockedScreen
-        locale={locale}
-        name={blockedInfo.name}
-        logoUrl={blockedInfo.logoUrl}
-        message={blockedInfo.message}
-      />
+      <MenuBlockedScreen locale={locale} info={blockedInfo} />
     );
   }
 
